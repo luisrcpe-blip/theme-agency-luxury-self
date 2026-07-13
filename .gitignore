@@ -1,0 +1,8 @@
+node_modules/
+.npm-cache/
+dist/
+out/
+demo-out/
+.vite/
+.local/
+*.log

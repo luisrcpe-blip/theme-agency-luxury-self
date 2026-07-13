@@ -1,0 +1,81 @@
+{
+  "policy": "Preserve every valuable live URL exactly or provide a one-hop 301 to a genuinely equivalent localized destination. Never redirect removed demo products to the home page.",
+  "mustPreserveExactly": {
+    "blog": "All 4 blog archive routes and all 23 current article routes in route-inventory.json",
+    "coreTranslations": "All 8 complete core WPML groups in route-inventory.json",
+    "propertyDetails": "Keep existing /portfolio/{slug}/ URLs unless a tested 301 map is shipped with the new canonical listing route"
+  },
+  "conditionalRedirects": [
+    {
+      "from": "/gestion-de-propriedades/",
+      "to": "/gestion-de-propiedades/",
+      "condition": "Only if the Spanish spelling is corrected in the new canonical IA",
+      "reason": "The live indexed route contains the Portuguese spelling 'propriedades'"
+    },
+    {
+      "from": "/propiedades/",
+      "to": "/bienes-raices/",
+      "condition": "If /bienes-raices/ remains the canonical listing index",
+      "reason": "The live listing filter submits to /propiedades/, which currently returns 404"
+    },
+    {
+      "from": "/properties/",
+      "to": "/bienes-raices/",
+      "condition": "If the empty indexed page is retired",
+      "reason": "Current /properties/ is a 200, self-canonical, empty page"
+    },
+    {
+      "from": "/portfolio/",
+      "to": "/bienes-raices/",
+      "condition": "If property discovery is consolidated into one crawlable listing index",
+      "reason": "Current archive has no server-rendered listing links and relies on 'CARGA MÁS'"
+    },
+    {
+      "from": "/portfolio/{slug}/",
+      "to": "/propiedades/{slug}/",
+      "condition": "Only if detail routes are normalized",
+      "reason": "Every one of the 11 live detail URLs needs an explicit one-to-one mapping"
+    }
+  ],
+  "excludeOrReplaceBeforeIndexing": [
+    {
+      "path": "/elementor-222585/",
+      "action": "Remove from sitemap and return 410, or 301 only if a truly equivalent page exists",
+      "reason": "Indexed Elementor scratch page"
+    },
+    {
+      "path": "/faq/",
+      "action": "Replace completely with real localized FAQs or remove/410",
+      "reason": "English theme-demo questions and Lorem Ipsum dated 2021; no FAQPage schema"
+    },
+    {
+      "path": "/properties/",
+      "action": "Consolidate or remove",
+      "reason": "Empty indexed page"
+    },
+    {
+      "pathPattern": "/producto/*",
+      "count": 22,
+      "action": "Do not import as business content. Remove from sitemap and 410/noindex unless replaced one-to-one by real products.",
+      "reason": "Fashion demo catalog, Lorem Ipsum, USD Product/Offer schema"
+    }
+  ],
+  "hostCanonicalization": [
+    {
+      "from": "http://agencyluxuryself.com/*",
+      "to": "https://agencyluxuryself.com/*",
+      "status": 301
+    },
+    {
+      "from": "https://www.agencyluxuryself.com/*",
+      "to": "https://agencyluxuryself.com/*",
+      "status": 301
+    },
+    {
+      "from": "http://www.agencyluxuryself.com/*",
+      "to": "https://agencyluxuryself.com/*",
+      "status": 301,
+      "note": "Current path takes two hops; collapse to one"
+    }
+  ]
+}

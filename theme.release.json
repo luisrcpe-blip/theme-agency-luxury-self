@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "themeId": "agency-luxury-self",
+  "name": "Agency Luxury Self",
+  "version": "1.0.0",
+  "contractVersion": "sales@1.1.0",
+  "publicBaseUrl": "https://themes.nuklo.cloud/agency-luxury-self/1.0.0/",
+  "sourceHost": "agencyluxuryself.com",
+  "defaultLocale": "es",
+  "locales": ["es", "en", "de", "fr"]
+}
