@@ -576,7 +576,10 @@ export function hrefFor(locale, key, slug) {
     typeof window !== "undefined" &&
     (window.location.pathname === RELEASE_BASE_PATH.slice(0, -1) || window.location.pathname.startsWith(RELEASE_BASE_PATH))
   ) {
-    return `${RELEASE_BASE_PATH.slice(0, -1)}${routePath}`;
+    const releaseHref = `${RELEASE_BASE_PATH.slice(0, -1)}${routePath}`;
+    return window.location.hostname === "themes.nuklo.cloud"
+      ? `${releaseHref}index.html`
+      : releaseHref;
   }
   return routePath;
 }
@@ -587,6 +590,7 @@ export function resolveRoute(pathname = window.location.pathname) {
   } else if (RELEASE_BASE_PATH !== "/" && pathname === RELEASE_BASE_PATH.slice(0, -1)) {
     pathname = "/";
   }
+  pathname = pathname.replace(/\/index\.html$/i, "/");
   const parts = pathname.split("/").filter(Boolean);
   const locale = LOCALES.includes(parts[0]) ? parts.shift() : "es";
   if (parts.length === 0) return { locale, page: "home" };
