@@ -566,6 +566,13 @@ h2 {
   font-size: 0.6rem;
 }
 
+.property-card-body > .eyebrow {
+  color: #8f6528;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
 .curated-card h2,
 .property-card h2,
 .article-card h2,
@@ -573,6 +580,16 @@ h2 {
   margin: 0 0 12px;
   font-size: clamp(1.4rem, 1.7vw, 1.8rem);
   line-height: 1.08;
+}
+
+.property-card h2 {
+  color: #211f1b;
+  font-family: var(--sans);
+  font-size: clamp(1.48rem, 1.65vw, 1.72rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
 .curated-card-body > p,
@@ -583,6 +600,12 @@ h2 {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.55;
+}
+
+.property-card-body > p {
+  color: var(--soft-ink);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .compact-metrics,
@@ -611,6 +634,16 @@ h2 {
   font-size: 0.71rem;
 }
 
+.property-card .metric {
+  font-weight: 600;
+}
+
+.property-card .metric small {
+  color: #625e56;
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
 .card-footer-row {
   display: flex;
   align-items: flex-end;
@@ -628,6 +661,20 @@ h2 {
   font-size: 1.32rem;
   font-weight: 400;
   white-space: nowrap;
+}
+
+.property-card .card-footer-row strong {
+  color: #211f1b;
+  font-family: var(--sans);
+  font-size: 1.24rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+.property-card .text-button {
+  font-size: 0.7rem;
 }
 
 .editorial-intro {
