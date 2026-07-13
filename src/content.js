@@ -199,6 +199,7 @@ export const copy = {
       services: "Servicios",
       about: "Nosotros",
       blog: "Blog",
+      contact: "Contacto",
     },
     consult: "Consultar",
     privateInquiry: "Consulta privada",
@@ -299,6 +300,7 @@ export const copy = {
       services: "Services",
       about: "About",
       blog: "Journal",
+      contact: "Contact",
     },
     consult: "Enquire",
     privateInquiry: "Private enquiry",
@@ -399,6 +401,7 @@ export const copy = {
       services: "Services",
       about: "Über uns",
       blog: "Journal",
+      contact: "Kontakt",
     },
     consult: "Anfragen",
     privateInquiry: "Private Anfrage",
@@ -498,6 +501,7 @@ export const copy = {
       services: "Services",
       about: "À propos",
       blog: "Journal",
+      contact: "Contact",
     },
     consult: "Consulter",
     privateInquiry: "Demande privée",
@@ -654,7 +658,9 @@ export function localizedHref(pathname, targetLocale) {
 }
 
 export function articlesForLocale(locale) {
-  return allArticles.filter((article) => article.locale === locale);
+  return allArticles
+    .filter((article) => article.locale === locale)
+    .sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0));
 }
 
 export function articleForRoute(locale, slug) {

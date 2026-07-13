@@ -4,6 +4,7 @@ import {
   ArrowsOut,
   Bathtub,
   Bed,
+  CaretDown,
   CaretLeft,
   CaretRight,
   CheckCircle,
@@ -98,6 +99,85 @@ const LOCALE_FLAGS = {
 const HEADER_LOCALES = ["en", "es", "de", "fr"];
 const MENU_KEYS = ["about", "properties", "services", "interiors", "atelier", "blog", "contact"];
 
+const sourcePageCopy = {
+  es: {
+    contactHeroEyebrow: "Atención personal y discreta",
+    contactHeroTitle: "Estamos aquí para escucharle.",
+    contactHeroLead: "Cuéntenos qué necesita y le acompañaremos con criterio, cercanía y absoluta confidencialidad.",
+    locationTitle: "Dónde estamos",
+    locationValue: "Sotogrande, Cádiz · Sur de España",
+    callUs: "Llámenos",
+    writeUs: "Escríbanos",
+    contactFormEyebrow: "Solicitud privada",
+    contactFormTitle: "Conversemos sobre lo que está buscando.",
+    contactFormLead: "Complete el formulario y el equipo de Agency Luxury Self se pondrá en contacto con usted.",
+    contactQuote: "Una buena decisión empieza por una conversación clara.",
+    areaLabel: "Nuestro área de servicio",
+    categories: "Categorías",
+    recentPosts: "Artículos recientes",
+    journalContact: "Hablemos",
+    journalContactLead: "¿Necesita asesoramiento inmobiliario o residencial en el sur de España?",
+    similarProperties: "Propiedades similares",
+  },
+  en: {
+    contactHeroEyebrow: "Personal, discreet attention",
+    contactHeroTitle: "We are here to listen.",
+    contactHeroLead: "Tell us what you need and we will guide you with judgment, care and complete confidentiality.",
+    locationTitle: "Where to find us",
+    locationValue: "Sotogrande, Cádiz · Southern Spain",
+    callUs: "Call us",
+    writeUs: "Write to us",
+    contactFormEyebrow: "Private request",
+    contactFormTitle: "Let us talk about what you are looking for.",
+    contactFormLead: "Complete the form and the Agency Luxury Self team will contact you personally.",
+    contactQuote: "A good decision begins with a clear conversation.",
+    areaLabel: "Our service area",
+    categories: "Categories",
+    recentPosts: "Recent articles",
+    journalContact: "Let us talk",
+    journalContactLead: "Need real-estate or residential advice in southern Spain?",
+    similarProperties: "Similar properties",
+  },
+  de: {
+    contactHeroEyebrow: "Persönlich und diskret",
+    contactHeroTitle: "Wir nehmen uns Zeit für Sie.",
+    contactHeroLead: "Erzählen Sie uns, was Sie suchen. Wir begleiten Sie mit Erfahrung, Sorgfalt und absoluter Vertraulichkeit.",
+    locationTitle: "Wo Sie uns finden",
+    locationValue: "Sotogrande, Cádiz · Südspanien",
+    callUs: "Rufen Sie uns an",
+    writeUs: "Schreiben Sie uns",
+    contactFormEyebrow: "Private Anfrage",
+    contactFormTitle: "Sprechen wir über Ihre Vorstellungen.",
+    contactFormLead: "Füllen Sie das Formular aus und das Team von Agency Luxury Self meldet sich persönlich bei Ihnen.",
+    contactQuote: "Eine gute Entscheidung beginnt mit einem klaren Gespräch.",
+    areaLabel: "Unser Servicegebiet",
+    categories: "Kategorien",
+    recentPosts: "Neueste Artikel",
+    journalContact: "Lassen Sie uns sprechen",
+    journalContactLead: "Sie wünschen Immobilien- oder Wohnberatung in Südspanien?",
+    similarProperties: "Ähnliche Immobilien",
+  },
+  fr: {
+    contactHeroEyebrow: "Une attention personnelle et discrète",
+    contactHeroTitle: "Nous sommes à votre écoute.",
+    contactHeroLead: "Parlez-nous de votre projet. Nous vous accompagnons avec discernement, attention et une totale confidentialité.",
+    locationTitle: "Où nous trouver",
+    locationValue: "Sotogrande, Cádiz · Sud de l’Espagne",
+    callUs: "Appelez-nous",
+    writeUs: "Écrivez-nous",
+    contactFormEyebrow: "Demande privée",
+    contactFormTitle: "Parlons de ce que vous recherchez.",
+    contactFormLead: "Complétez le formulaire et l’équipe Agency Luxury Self vous contactera personnellement.",
+    contactQuote: "Une bonne décision commence par une conversation claire.",
+    areaLabel: "Notre zone d’intervention",
+    categories: "Catégories",
+    recentPosts: "Articles récents",
+    journalContact: "Parlons-en",
+    journalContactLead: "Besoin d’un conseil immobilier ou résidentiel dans le sud de l’Espagne ?",
+    similarProperties: "Propriétés similaires",
+  },
+};
+
 const COVER_PAGES = new Set([
   "home",
   "properties",
@@ -107,6 +187,7 @@ const COVER_PAGES = new Set([
   "about",
   "atelier",
   "blog",
+  "article",
   "contact",
 ]);
 
@@ -120,7 +201,7 @@ function useDialogA11y(open, onClose) {
     const dialog = dialogRef.current;
     const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const animationFrame = window.requestAnimationFrame(() => {
-      dialog?.querySelector(focusableSelector)?.focus();
+      (dialog?.querySelector("[data-autofocus]") || dialog?.querySelector(focusableSelector))?.focus();
     });
     function handleKeyDown(event) {
       if (event.key === "Escape") {
@@ -236,6 +317,65 @@ function Logo({ locale = "es", tone = "dark" }) {
   );
 }
 
+function LocaleSwitcher({ locale, tone = "header" }) {
+  const t = copy[locale];
+  const pathname = window.location.pathname;
+  const [open, setOpen] = useState(false);
+  const switcherRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function handlePointerDown(event) {
+      if (!switcherRef.current?.contains(event.target)) setOpen(false);
+    }
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [open]);
+
+  return (
+    <div ref={switcherRef} className={`locale-switcher locale-switcher--${tone}`}>
+      <button
+        className="locale-trigger"
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label={t.languageSelector}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span className="flag-frame"><img src={LOCALE_FLAGS[locale]} alt="" /></span>
+        <CaretDown size={13} weight="bold" aria-hidden="true" />
+      </button>
+      {open ? (
+        <nav className="locale-menu" aria-label={t.languageSelector}>
+          {HEADER_LOCALES.map((item) => (
+            <a
+              key={item}
+              className={item === locale ? "active" : ""}
+              href={localizedHref(pathname, item)}
+              lang={item}
+              hrefLang={item}
+              aria-current={item === locale ? "page" : undefined}
+            >
+              <span className="flag-frame"><img src={LOCALE_FLAGS[item]} alt="" /></span>
+              <span>{copy[item].localeName}</span>
+            </a>
+          ))}
+        </nav>
+      ) : null}
+    </div>
+  );
+}
+
 function Header({ locale, onMenu, overCover }) {
   const t = copy[locale];
   const pathname = window.location.pathname;
@@ -257,27 +397,14 @@ function Header({ locale, onMenu, overCover }) {
         </button>
         <Logo locale={locale} tone={transparent ? "light" : "dark"} />
         <div className="header-actions">
-          <nav className="locale-switcher" aria-label={t.languageSelector}>
-            {HEADER_LOCALES.map((item) => (
-              <a
-                key={item}
-                className={item === locale ? "active" : ""}
-                href={localizedHref(pathname, item)}
-                lang={item}
-                hrefLang={item}
-                aria-label={copy[item].localeName}
-              >
-                <img src={LOCALE_FLAGS[item]} alt="" />
-              </a>
-            ))}
-          </nav>
+          <LocaleSwitcher locale={locale} tone={transparent ? "cover" : "header"} />
         </div>
       </div>
     </header>
   );
 }
 
-function MobileMenu({ locale, open, onClose, onInquiry, onSearch }) {
+function MobileMenu({ locale, open, onClose }) {
   const t = copy[locale];
   const dialogRef = useDialogA11y(open, onClose);
   if (!open) return null;
@@ -286,34 +413,21 @@ function MobileMenu({ locale, open, onClose, onInquiry, onSearch }) {
       <div className="mobile-menu-panel">
         <div className="overlay-header">
           <Logo locale={locale} tone="light" />
-          <button className="icon-button" type="button" onClick={onClose} aria-label={t.close}>
+          <button className="icon-button" type="button" onClick={onClose} aria-label={t.close} data-autofocus>
             <X size={24} weight="light" />
           </button>
         </div>
         <nav className="mobile-nav">
           {MENU_KEYS.map((key) => (
-            <a key={key} href={hrefFor(locale, key)}>
+            <a key={key} href={hrefFor(locale, key)} onClick={onClose}>
               {t.nav[key]}
-              <ArrowRight size={18} weight="light" />
             </a>
           ))}
         </nav>
-        <button className="outline-button mobile-search" type="button" onClick={onSearch}>
-          <MagnifyingGlass size={18} weight="light" /> {t.search}
-        </button>
-        <a className="outline-button mobile-cart-link" href={hrefFor(locale, "cart")}>
-          <Handbag size={18} weight="light" /> {t.cart}
-        </a>
-        <button className="solid-button mobile-consult" type="button" onClick={onInquiry}>
-          {t.privateInquiry}
-        </button>
-        <nav className="mobile-locales" aria-label={t.languageSelector}>
-          {HEADER_LOCALES.map((item) => (
-            <a key={item} href={localizedHref(window.location.pathname, item)} className={item === locale ? "active" : ""}>
-              {copy[item].localeName}
-            </a>
-          ))}
-        </nav>
+        <div className="mobile-menu-footer">
+          <LocaleSwitcher locale={locale} tone="menu" />
+          <a href="https://www.instagram.com/agency_luxuryself/" target="_blank" rel="noreferrer">Instagram</a>
+        </div>
       </div>
       <button className="overlay-backdrop" type="button" onClick={onClose} aria-label={t.close} />
     </div>
@@ -386,7 +500,7 @@ function SearchOverlay({ locale, open, onClose }) {
   );
 }
 
-function InquiryForm({ locale, context = { kind: "general", cta: "contact" }, compact = false }) {
+function InquiryForm({ locale, context = { kind: "general", cta: "contact" }, compact = false, minimal = false }) {
   const t = copy[locale];
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -428,10 +542,12 @@ function InquiryForm({ locale, context = { kind: "general", cta: "contact" }, co
           <span>{t.name}</span>
           <input name="name" autoComplete="given-name" required />
         </label>
-        <label>
-          <span>{t.surname}</span>
-          <input name="surname" autoComplete="family-name" />
-        </label>
+        {!minimal ? (
+          <label>
+            <span>{t.surname}</span>
+            <input name="surname" autoComplete="family-name" />
+          </label>
+        ) : null}
         <label>
           <span>{t.email}</span>
           <input name="email" type="email" autoComplete="email" required />
@@ -441,18 +557,20 @@ function InquiryForm({ locale, context = { kind: "general", cta: "contact" }, co
           <input name="phone" type="tel" autoComplete="tel" />
         </label>
       </div>
-      <label>
-        <span>{t.interest}</span>
-        <select name="interest" defaultValue={context.kind || "general"}>
-          <option value="property">{t.nav.properties}</option>
-          <option value="service">{t.nav.services}</option>
-          <option value="product">{t.nav.atelier}</option>
-          <option value="general">{t.privateInquiry}</option>
-        </select>
-      </label>
+      {!minimal ? (
+        <label>
+          <span>{t.interest}</span>
+          <select name="interest" defaultValue={context.kind || "general"}>
+            <option value="property">{t.nav.properties}</option>
+            <option value="service">{t.nav.services}</option>
+            <option value="product">{t.nav.atelier}</option>
+            <option value="general">{t.privateInquiry}</option>
+          </select>
+        </label>
+      ) : null}
       <label>
         <span>{t.message}</span>
-        <textarea name="message" rows={compact ? 4 : 6} required />
+        <textarea name="message" rows={compact ? 3 : 6} required />
       </label>
       <label className="privacy-checkbox">
         <input name="privacy" type="checkbox" required />
@@ -753,6 +871,7 @@ function PropertyPage({ locale, slug, onInquiry }) {
   const lightboxRef = useDialogA11y(galleryIndex !== null, () => setGalleryIndex(null));
   if (!property) return <NotFound locale={locale} />;
   const gallery = [property.heroImage, ...(property.gallery || [])];
+  const relatedProperties = propertiesForLocale(locale).filter((item) => item.id !== property.id).slice(0, 3);
   return (
     <main>
       <section className="detail-hero">
@@ -794,11 +913,21 @@ function PropertyPage({ locale, slug, onInquiry }) {
             <div><span className="eyebrow">{t.gallery}</span><h2>{property.title}</h2></div>
           </div>
           <div className="property-gallery">
-            {gallery.slice(0, 9).map((image, index) => (
+            {gallery.map((image, index) => (
               <button key={`${image}-${index}`} type="button" onClick={() => setGalleryIndex(index)}>
                 <img src={image} alt={`${property.title} — ${index + 1}`} loading="lazy" />
               </button>
             ))}
+          </div>
+        </section>
+      ) : null}
+      {relatedProperties.length ? (
+        <section className="related-section section-pad">
+          <div className="section-heading-row">
+            <div><span className="eyebrow">Agency Luxury Self</span><h2>{sourcePageCopy[locale].similarProperties}</h2></div>
+          </div>
+          <div className="property-grid property-related-grid">
+            {relatedProperties.map((item) => <PropertyCard key={item.id} locale={locale} property={item} />)}
           </div>
         </section>
       ) : null}
@@ -908,16 +1037,23 @@ function ProductPage({ locale, slug }) {
   );
 }
 
+function formattedArticleDate(article, locale) {
+  if (!article.publishedAt) return "";
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(new Date(article.publishedAt));
+}
+
 function ArticleCard({ locale, article }) {
   const t = copy[locale];
+  const date = formattedArticleDate(article, locale);
   return (
-    <article className="article-card">
+    <article className="article-card" id={`post-${article.slug}`}>
       <a href={hrefFor(locale, "blog", article.slug)} className="article-image">
         <img src={article.heroImage} alt={article.title} loading="lazy" />
       </a>
       <div>
         <span className="eyebrow">{article.category || t.blogTitle}</span>
         <h2><a href={hrefFor(locale, "blog", article.slug)}>{article.title}</a></h2>
+        {date ? <p className="article-card-meta">{date} · {article.author}</p> : null}
         <p>{article.description}</p>
         <a className="text-button" href={hrefFor(locale, "blog", article.slug)}>
           {t.readArticle} <ArrowRight size={15} weight="light" />
@@ -927,14 +1063,68 @@ function ArticleCard({ locale, article }) {
   );
 }
 
+function BlogSidebar({ locale, articles }) {
+  const pageCopy = sourcePageCopy[locale];
+  const categories = [...new Set(articles.map((article) => article.category).filter(Boolean))];
+  const recent = articles.slice(0, 4);
+  return (
+    <aside className="blog-sidebar" aria-label={pageCopy.categories}>
+      {categories.length ? (
+        <section className="blog-sidebar-block">
+          <h2>{pageCopy.categories}</h2>
+          <nav className="blog-categories">
+            {categories.map((category) => {
+              const firstArticle = articles.find((article) => article.category === category);
+              return <a key={category} href={`${hrefFor(locale, "blog")}#post-${firstArticle.slug}`}>{category}</a>;
+            })}
+          </nav>
+        </section>
+      ) : null}
+      <section className="blog-sidebar-block">
+        <h2>{pageCopy.recentPosts}</h2>
+        <div className="recent-posts">
+          {recent.map((article) => (
+            <a key={article.id} href={hrefFor(locale, "blog", article.slug)}>
+              <img src={article.heroImage} alt="" loading="lazy" />
+              <span>
+                <strong>{article.title}</strong>
+                <small>{formattedArticleDate(article, locale)}</small>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+      <section
+        className="sidebar-contact-card"
+        style={{ backgroundImage: "url('/assets/source/blog/sidebar-contact-bg.webp')" }}
+      >
+        <div className="sidebar-contact-copy">
+          <span className="eyebrow">Agency Luxury Self</span>
+          <h2>{pageCopy.journalContact}</h2>
+          <p>{pageCopy.journalContactLead}</p>
+        </div>
+        <InquiryForm
+          locale={locale}
+          context={{ kind: "service", cta: "blog-sidebar" }}
+          compact
+          minimal
+        />
+      </section>
+    </aside>
+  );
+}
+
 function BlogPage({ locale }) {
   const t = copy[locale];
   const articles = articlesForLocale(locale);
   return (
     <main>
       <PageHero image={PAGE_COVERS.blog} eyebrow="Agency Luxury Self Journal" title={t.blogTitle} lead={t.blogLead} />
-      <section className="article-grid article-index section-pad">
-        {articles.map((article) => <ArticleCard key={article.id} locale={locale} article={article} />)}
+      <section className="blog-layout article-index section-pad">
+        <div className="article-grid blog-article-grid">
+          {articles.map((article) => <ArticleCard key={article.id} locale={locale} article={article} />)}
+        </div>
+        <BlogSidebar locale={locale} articles={articles} />
       </section>
     </main>
   );
@@ -950,29 +1140,34 @@ function ArticlePage({ locale, slug, onInquiry }) {
     : null;
   return (
     <main>
-      <article className="article-detail">
-        <header className="article-header section-pad">
-          <span className="eyebrow">{article.category || t.blogTitle}</span>
-          <h1>{article.title}</h1>
-          <p>{article.description}</p>
-          <div className="article-meta">
-            {date ? <span>{t.published}: {date}</span> : null}
-            <span>{t.by}: {article.author}</span>
+      <PageHero
+        image={article.heroImage}
+        eyebrow={article.category || t.blogTitle}
+        title={article.title}
+        lead={article.description}
+      />
+      <section className="blog-layout article-page-layout section-pad">
+        <article className="article-detail">
+          <header className="article-header">
+            <div className="article-meta">
+              {date ? <span>{t.published}: {date}</span> : null}
+              <span>{t.by}: {article.author}</span>
+            </div>
+          </header>
+          <div className="article-body rich-content" dangerouslySetInnerHTML={{ __html: article.bodyHtml }} />
+          <div className="article-inquiry">
+            <h2>{t.inquiryTitle}</h2>
+            <button className="solid-button" type="button" onClick={() => onInquiry({
+              kind: "service",
+              itemId: article.id,
+              itemSlug: article.slug,
+              itemName: article.title,
+              cta: "article-end",
+            })}>{t.privateInquiry}</button>
           </div>
-        </header>
-        <img className="article-hero-image" src={article.heroImage} alt={article.title} />
-        <div className="article-body rich-content" dangerouslySetInnerHTML={{ __html: article.bodyHtml }} />
-        <div className="article-inquiry section-pad">
-          <h2>{t.inquiryTitle}</h2>
-          <button className="solid-button" type="button" onClick={() => onInquiry({
-            kind: "service",
-            itemId: article.id,
-            itemSlug: article.slug,
-            itemName: article.title,
-            cta: "article-end",
-          })}>{t.privateInquiry}</button>
-        </div>
-      </article>
+        </article>
+        <BlogSidebar locale={locale} articles={articlesForLocale(locale)} />
+      </section>
       <section className="related-section section-pad">
         <span className="eyebrow">{t.related}</span>
         <div className="article-grid">
@@ -1061,18 +1256,52 @@ function ServicePage({ locale, page }) {
 
 function ContactPage({ locale }) {
   const t = copy[locale];
+  const pageCopy = sourcePageCopy[locale];
   return (
     <main>
-      <PageHero image={PAGE_COVERS.contact} overlay="contact" eyebrow={t.privateAdvisory} title={t.inquiryTitle} lead={t.inquiryBody} />
-      <section className="contact-layout section-pad">
-        <div className="contact-details">
-          <h2>Agency Luxury Self</h2>
-          <a href="tel:+34613277859"><Phone size={20} weight="light" /> +34 613 27 78 59</a>
-          <a href="mailto:analucia@agencyluxuryself.com"><EnvelopeSimple size={20} weight="light" /> analucia@agencyluxuryself.com</a>
-          <a href="https://www.instagram.com/agency_luxuryself/" target="_blank" rel="noreferrer"><InstagramLogo size={20} weight="light" /> agency_luxuryself</a>
-        </div>
-        <InquiryForm locale={locale} />
+      <PageHero
+        image={PAGE_COVERS.contact}
+        overlay="contact"
+        eyebrow={pageCopy.contactHeroEyebrow}
+        title={pageCopy.contactHeroTitle}
+        lead={pageCopy.contactHeroLead}
+      />
+      <section className="contact-strip section-pad">
+        <article>
+          <MapPin size={23} weight="light" />
+          <span><small>{pageCopy.locationTitle}</small><strong>{pageCopy.locationValue}</strong></span>
+        </article>
+        <a href="tel:+34613277859">
+          <WhatsappLogo size={23} weight="light" />
+          <span><small>{pageCopy.callUs}</small><strong>+34 613 27 78 59</strong></span>
+        </a>
+        <a href="mailto:analucia@agencyluxuryself.com">
+          <EnvelopeSimple size={23} weight="light" />
+          <span><small>{pageCopy.writeUs}</small><strong>analucia@agencyluxuryself.com</strong></span>
+        </a>
       </section>
+      <section className="contact-main section-pad">
+        <figure className="contact-visual">
+          <img src="/assets/source/pages/contact-form-keys.webp" alt="" />
+          <figcaption>{pageCopy.contactQuote}</figcaption>
+        </figure>
+        <div className="contact-form-panel">
+          <span className="eyebrow">{pageCopy.contactFormEyebrow}</span>
+          <h2>{pageCopy.contactFormTitle}</h2>
+          <p>{pageCopy.contactFormLead}</p>
+          <InquiryForm locale={locale} context={{ kind: "general", cta: "contact-page" }} />
+        </div>
+      </section>
+      <a
+        className="contact-map-band section-pad"
+        href="https://www.google.com/maps/search/?api=1&query=Sotogrande%2C+C%C3%A1diz"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <MapPin size={34} weight="light" />
+        <span><small>{pageCopy.areaLabel}</small><strong>{pageCopy.locationValue}</strong></span>
+        <ArrowRight size={20} weight="light" />
+      </a>
     </main>
   );
 }

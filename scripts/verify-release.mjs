@@ -83,6 +83,8 @@ const EXPECTED_SOURCE_HASHES = Object.freeze({
   "assets/source/pages/atelier-cover.webp": "29b6af6a25f410222fb82a2791ae1440446d8ceb517d6a5e30e1f99d73123e38",
   "assets/source/pages/blog-cover.jpg": "37d303930afa71aca8aa9bd6938082404dfae96016d4395019636e9e53652cbd",
   "assets/source/pages/contact-cover.jpg": "e848be371169caa1fbd28dba1fb606b8e7c9459c9d2090394b4300ac02f9284d",
+  "assets/source/pages/contact-form-keys.webp": "7816f5c953389d966f868109d115e8a7a9aeb8e9c7f04d6ea3b1f188d2c0342d",
+  "assets/source/blog/sidebar-contact-bg.webp": "86c109c851a0390bfca57d213c838b760921e97dcd4e525bd31a9c4d5e559139",
   "assets/source/brand/als-logo-dark.webp": "634881232b0bc1c01c17ba34aab5dbc1762c4b7305b82f2d484225bc3677f416",
   "assets/source/brand/als-logo-light.webp": "73727a9f210a1773a9ef72aa419fd34c25ef7fc415400c521290074fdb4d0a0e",
   "assets/source/brand/flags/de.svg": "8fcaa96d8835e39fa6a74ff4dc781d908112d46ceb8fb81ff37c433f390a4c8b",
@@ -153,12 +155,12 @@ function validateManifestShape(manifest) {
   assert(manifest.id === "agency-luxury-self", "Manifest theme id invalido.");
   assert(manifest.mode === "sales", "Manifest mode debe ser sales.");
   assert(manifest.contractVersion === "sales@1.1.0", "Manifest debe usar sales@1.1.0.");
-  assert(manifest.templateVersion === "1.0.4", "Manifest debe usar templateVersion 1.0.4.");
+  assert(manifest.templateVersion === "1.0.5", "Manifest debe usar templateVersion 1.0.5.");
   assert(manifest.renderer === "remote-static-app", "Manifest renderer debe ser remote-static-app.");
   assert(manifest.entry === "index.html", "Manifest entry debe ser index.html.");
   const appUrl = new URL(manifest.appUrl);
   assert(appUrl.protocol === "https:", "Manifest appUrl debe usar HTTPS.");
-  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.4/"), "Manifest appUrl no es el release inmutable esperado.");
+  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.5/"), "Manifest appUrl no es el release inmutable esperado.");
   assert(
     manifest.previewUrl === new URL("es/index.html", manifest.appUrl).toString(),
     "Manifest previewUrl debe apuntar al HTML humano espanol.",
