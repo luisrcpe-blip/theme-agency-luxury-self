@@ -8,6 +8,9 @@ const root = process.cwd();
 const inventory = JSON.parse(
   await readFile(path.join(root, "content", "source-route-inventory.json"), "utf8"),
 );
+const galleryOverrides = JSON.parse(
+  await readFile(path.join(root, "content", "property-gallery-overrides.json"), "utf8"),
+);
 const sourceUrls = inventory.inventoryBySitemapType.portfolio.filter(
   (url) => new URL(url).pathname !== "/portfolio/",
 );
@@ -124,9 +127,12 @@ async function importProperty(url) {
     .toArray()
     .map((node) => $(node).attr("data-full") || $(node).find("img").attr("src"))
     .filter(Boolean);
-  const gallery = await mapInBatches(gallerySources, 4, (source, index) =>
+  const importedGallery = await mapInBatches(gallerySources, 4, (source, index) =>
     downloadImage(source, slug, "gallery", index),
   );
+  const gallery = importedGallery.length
+    ? importedGallery
+    : galleryOverrides[slug]?.gallery || [];
   const contentNode = $(".portfolio-single-item").first();
   const bodyHtml = cleanRichText($, contentNode);
   const description = $("meta[property='og:description']").attr("content")?.trim() ||

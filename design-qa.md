@@ -91,11 +91,22 @@ Post-fix browser QA confirmed one active slide out of three, working next-arrow 
 - Corrected desktop detail: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-fix\03-property-detail-after.jpg`.
 - Responsive evidence: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-fix\05-property-detail-mobile-after.jpg`.
 
-The audit found that the first four source listings publish one original photograph each and no gallery nodes. Their local files were valid, but the implementation hid the entire gallery whenever the assembled image array had length one. The correction renders every available original gallery immediately after the summary, uses a wide single-image layout when needed, and keeps the description below the media. It does not invent, generate, or substitute photographs.
+The initial audit found that the first four WordPress listings publish one attachment each and no gallery nodes. Their local files were valid, but the implementation hid the media section whenever the assembled image array had length one. That visibility defect remains corrected. For La Paloma, however, treating the damaged WordPress attachment set as the complete media truth was insufficient: a second source-grounded recovery identified the exact syndicated property reference V214 by matching the location, 4 bedrooms, 4 bathrooms, 560 m² built area, 1,356 m² plot, 150 m² terrace, description, and the ALS cover photograph.
 
-Visible card media now loads eagerly for the first four listing results and for related-property cards. In full galleries, the first four images are prioritized while later photographs remain lazy. La Paloma now exposes one decoded 1600 x 1068 gallery image and three decoded related-card covers; Villa KOA still exposes all 46 available images, with its first four decoded eagerly and zero broken images. The single-image lightbox opens and closes correctly.
+Visible card media loads eagerly for the first four listing results and for related-property cards. In full galleries, the first four images are prioritized while later photographs remain lazy. La Paloma now exposes 60 unique photographs: the existing ALS cover plus 59 recovered V214 originals, with the matching source image 10 excluded to prevent duplication. All 60 local files decode correctly, the lightbox advances between images, and the complete source set remains traceable through `content/property-gallery-overrides.json`. Villa KOA still exposes all 46 available images.
 
-Responsive browser checks passed at 1280 x 720 and an emulated 390 x 844 viewport. The gallery becomes one column with a 4:3 mobile crop, the enquiry CTA remains within its container, and neither viewport has horizontal overflow. Browser consoles reported zero errors. Repository-wide asset verification covered 250 unique property-image references with zero missing or undecodable files. Production build and link validation passed.
+Responsive browser checks passed at the default desktop viewport and an emulated 390 x 844 viewport. La Paloma renders four gallery columns on desktop and two on mobile, with no horizontal overflow; all 60 images load progressively with zero broken files. The enquiry CTA remains within its container. Production build and link validation passed.
+
+## Exact La Paloma V214 gallery recovery
+
+- Exact syndicated source: `https://www.openfrontiers.com/properties/la-paloma/villa/V214` (60 source photographs).
+- Independent price/reference corroboration: `https://www.selectionmed.com/proprietes/la-paloma/villa/V214`.
+- WordPress-loss evidence: `https://public-api.wordpress.com/rest/v1.1/sites/254206541/posts/2772` reports one attachment.
+- Existing ALS cover vs V214 image 10 match: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-recovery\hero-match.jpg`.
+- Full 60-image source contact sheet: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-recovery\contact-sheet.jpg`.
+- Source-versus-implementation comparison: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-recovery\compare-source-vs-implementation.jpg`.
+- Desktop implementation evidence: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-recovery\downloads\04-complete-gallery-visible.png`.
+- Mobile implementation evidence: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-recovery\downloads\05-complete-gallery-mobile.png`.
 
 - P0: none.
 - P1: none remaining in property image visibility.
