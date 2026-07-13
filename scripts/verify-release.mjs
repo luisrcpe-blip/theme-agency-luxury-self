@@ -9,7 +9,9 @@ import {
   LOCALES,
   MANIFEST_FILE,
   OUT_DIR,
+  PAGE_COVER_PATHS,
   PROJECT_ROOT,
+  SOURCE_MEDIA_ASSETS,
   loadReleaseSource,
 } from "./release-config.mjs";
 import {
@@ -55,6 +57,39 @@ const EXPECTED_PROPERTY_STATUS = {
   statusKey: "for-sale",
   labels: { es: "En venta", en: "For sale", de: "Zum Verkauf", fr: "À vendre" },
 };
+const EXPECTED_OG_BY_TRANSLATION_KEY = Object.freeze({
+  "shop.home": PAGE_COVER_PATHS.home,
+  "content.properties": PAGE_COVER_PATHS.properties,
+  "content.interiors": PAGE_COVER_PATHS.interiors,
+  "shop.collection": PAGE_COVER_PATHS.atelier,
+  "content.services": PAGE_COVER_PATHS.services,
+  "content.about": PAGE_COVER_PATHS.about,
+  "content.blog": PAGE_COVER_PATHS.blog,
+  "content.contact": PAGE_COVER_PATHS.contact,
+  "content.privacy": PAGE_COVER_PATHS.home,
+  "content.cookies": PAGE_COVER_PATHS.home,
+  "content.legal": PAGE_COVER_PATHS.home,
+  "commerce.cart": PAGE_COVER_PATHS.home,
+  "commerce.checkout": PAGE_COVER_PATHS.home,
+  "shop.product": PAGE_COVER_PATHS.atelier,
+  "commerce.order": PAGE_COVER_PATHS.home,
+});
+const EXPECTED_SOURCE_HASHES = Object.freeze({
+  "assets/source/pages/home-cover.webp": "421693da60c067ae9914d5407a2483fa8d0074d170316b97fb26d9ee5ad45b04",
+  "assets/source/pages/about-cover.jpg": "6e1b000a9ffb91c4743f885d78ba35ed1dd80a59a2bf51502739ec15793e453c",
+  "assets/source/pages/properties-cover.webp": "5c0233b9f5e3c8bcae771fd34ff91da582957265ecf13dd92cd1eac7388f4466",
+  "assets/source/pages/management-cover.jpg": "d1dd970b929c710611c1d4d78f2afdc0608a2d5f2308d890af1bd517c8d171b3",
+  "assets/source/pages/interiors-cover.webp": "fca89f14d4d098cdf2f81c588fb1318b984506b22693d786cbb7fc1dc76ae627",
+  "assets/source/pages/atelier-cover.webp": "29b6af6a25f410222fb82a2791ae1440446d8ceb517d6a5e30e1f99d73123e38",
+  "assets/source/pages/blog-cover.jpg": "37d303930afa71aca8aa9bd6938082404dfae96016d4395019636e9e53652cbd",
+  "assets/source/pages/contact-cover.jpg": "e848be371169caa1fbd28dba1fb606b8e7c9459c9d2090394b4300ac02f9284d",
+  "assets/source/brand/als-logo-dark.webp": "634881232b0bc1c01c17ba34aab5dbc1762c4b7305b82f2d484225bc3677f416",
+  "assets/source/brand/als-logo-light.webp": "73727a9f210a1773a9ef72aa419fd34c25ef7fc415400c521290074fdb4d0a0e",
+  "assets/source/brand/flags/de.svg": "8fcaa96d8835e39fa6a74ff4dc781d908112d46ceb8fb81ff37c433f390a4c8b",
+  "assets/source/brand/flags/en.svg": "4c5edc0c143fffe3bfed4126d2b3527e6e21c57499af43f9577b45c6eb93e598",
+  "assets/source/brand/flags/es.svg": "8fc508fdb3ef11a4e38f9123f1ae903962ca14841cefd7b98ed5550d50d2f1bb",
+  "assets/source/brand/flags/fr.svg": "a7d195ab974d9555702eede5af18287b5767efcea5fc6dadf529e114dc6fb568",
+});
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -118,12 +153,12 @@ function validateManifestShape(manifest) {
   assert(manifest.id === "agency-luxury-self", "Manifest theme id invalido.");
   assert(manifest.mode === "sales", "Manifest mode debe ser sales.");
   assert(manifest.contractVersion === "sales@1.1.0", "Manifest debe usar sales@1.1.0.");
-  assert(manifest.templateVersion === "1.0.3", "Manifest debe usar templateVersion 1.0.3.");
+  assert(manifest.templateVersion === "1.0.4", "Manifest debe usar templateVersion 1.0.4.");
   assert(manifest.renderer === "remote-static-app", "Manifest renderer debe ser remote-static-app.");
   assert(manifest.entry === "index.html", "Manifest entry debe ser index.html.");
   const appUrl = new URL(manifest.appUrl);
   assert(appUrl.protocol === "https:", "Manifest appUrl debe usar HTTPS.");
-  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.3/"), "Manifest appUrl no es el release inmutable esperado.");
+  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.4/"), "Manifest appUrl no es el release inmutable esperado.");
   assert(
     manifest.previewUrl === new URL("es/index.html", manifest.appUrl).toString(),
     "Manifest previewUrl debe apuntar al HTML humano espanol.",
@@ -205,6 +240,47 @@ async function validateRoutes(manifest) {
   assert(prerenderedProperties === 44, `Se esperaban 44 propiedades prerenderizadas; hay ${prerenderedProperties}.`);
   assert(prerenderedArticles === 32, `Se esperaban 32 articulos prerenderizados; hay ${prerenderedArticles}.`);
   return { routes: routes.length, totalHtmlBytes, prerenderedProperties, prerenderedArticles };
+}
+
+async function validateSourceAssets(manifest) {
+  const appUrl = new URL(manifest.appUrl);
+  const mediaAssets = manifest.mediaAssets || [];
+  assert(mediaAssets.length === SOURCE_MEDIA_ASSETS.length, `Se esperaban ${SOURCE_MEDIA_ASSETS.length} mediaAssets fuente; hay ${mediaAssets.length}.`);
+  assert(new Set(mediaAssets.map((asset) => asset.key)).size === mediaAssets.length, "mediaAssets contiene keys duplicadas.");
+  const mediaByKey = new Map(mediaAssets.map((asset) => [asset.key, asset]));
+  for (const expected of SOURCE_MEDIA_ASSETS) {
+    const asset = mediaByKey.get(expected.key);
+    assert(asset, `Falta mediaAsset fuente: ${expected.key}`);
+    assert(asset.kind === expected.kind, `Kind incorrecto para ${expected.key}: ${asset.kind}`);
+    const expectedUrl = new URL(expected.path.replace(/^\//, ""), manifest.appUrl).toString();
+    assert(asset.url === expectedUrl, `URL incorrecta para ${expected.key}: ${asset.url}`);
+  }
+
+  for (const [relativeAsset, expectedHash] of Object.entries(EXPECTED_SOURCE_HASHES)) {
+    const file = resolve(OUT_DIR, ...relativeAsset.split("/"));
+    assert(existsSync(file), `Asset fuente ausente: ${relativeAsset}`);
+    const bytes = await readFile(file);
+    assert(sha256(bytes) === expectedHash, `Asset fuente sustituido o alterado: ${relativeAsset}`);
+  }
+
+  const routesByPath = new Map((manifest.routes || []).map((route) => [route.path, route]));
+  for (const seo of manifest.routeSeo || []) {
+    assert(seo.ogImage, `Falta ogImage en ${seo.path}.`);
+    const url = new URL(seo.ogImage);
+    assert(url.origin === appUrl.origin, `ogImage fuera del origen en ${seo.path}: ${seo.ogImage}`);
+    assert(url.pathname.startsWith(appUrl.pathname), `ogImage fuera del release inmutable en ${seo.path}: ${seo.ogImage}`);
+    const relativeAsset = url.pathname.slice(appUrl.pathname.length).replace(/^\//, "");
+    assert(relativeAsset && existsSync(resolve(OUT_DIR, ...relativeAsset.split("/"))), `ogImage ausente en ${seo.path}: ${relativeAsset}`);
+    const route = routesByPath.get(seo.path);
+    assert(route, `routeSeo sin descriptor: ${seo.path}`);
+    const expectedPath = EXPECTED_OG_BY_TRANSLATION_KEY[route.translationKey];
+    if (expectedPath) {
+      const expectedUrl = new URL(expectedPath.replace(/^\//, ""), manifest.appUrl).toString();
+      assert(seo.ogImage === expectedUrl, `Cover OG incorrecto para ${route.translationKey}:${route.locale}.`);
+    }
+  }
+
+  return { mediaAssets: mediaAssets.length, sourceHashes: Object.keys(EXPECTED_SOURCE_HASHES).length };
 }
 
 async function validateIntegrity(manifestRaw, manifest, integrity) {
@@ -326,6 +402,7 @@ async function main() {
   const integrity = JSON.parse(await readFile(resolve(OUT_DIR, INTEGRITY_FILE), "utf8"));
   validateManifestShape(manifest);
   const routeResult = await validateRoutes(manifest);
+  const sourceAssets = await validateSourceAssets(manifest);
   const fileCount = await validateIntegrity(manifestRaw, manifest, integrity);
   const migration = await validateSeoMigration(manifest);
   const exactCore = runExactCoreValidation(manifestPath);
@@ -335,6 +412,7 @@ async function main() {
   console.log(`Verified ${manifest.id}@${manifest.templateVersion}`);
   console.log(`  ${routeResult.routes} unique routes, ${(routeResult.totalHtmlBytes / 1024 / 1024).toFixed(2)} MiB imported HTML`);
   console.log(`  ${routeResult.prerenderedProperties} property pages and ${routeResult.prerenderedArticles} article pages prerendered with JSON-LD`);
+  console.log(`  ${sourceAssets.mediaAssets} original cover/brand assets with ${sourceAssets.sourceHashes} locked source hashes`);
   console.log(`  ${fileCount} integrity-tracked files`);
   console.log(`  ${migration.articleRedirects} article redirects, ${migration.propertyRedirects} property redirects, ${migration.gone} gone routes`);
   console.log(`  ${migration.localizedPropertyFacts} localized property fact sets with stable filter keys`);

@@ -41,6 +41,15 @@ function gitValue(args, fallback) {
   return result.status === 0 && result.stdout.trim() ? result.stdout.trim() : fallback;
 }
 
+function gitIsDirty() {
+  const result = spawnSync("git", ["status", "--porcelain"], {
+    cwd: PROJECT_ROOT,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  return result.status !== 0 || Boolean(result.stdout.trim());
+}
+
 async function walkFiles(root) {
   const files = [];
   async function visit(directory) {
@@ -367,8 +376,9 @@ async function main() {
   const releaseSource = JSON.parse(await readFile(resolve(PROJECT_ROOT, "theme.release.json"), "utf8"));
   const configuredBase = process.env.THEME_RELEASE_BASE_URL || releaseSource.publicBaseUrl;
   const releaseBase = assertReleaseBase(configuredBase, releaseSource.themeId, releaseSource.version);
+  const explicitSourceCommit = process.env.THEME_SOURCE_COMMIT || process.env.GITHUB_SHA;
   const sourceCommit = String(
-    process.env.THEME_SOURCE_COMMIT || process.env.GITHUB_SHA || gitValue(["rev-parse", "HEAD"], "local-uncommitted"),
+    explicitSourceCommit || (gitIsDirty() ? "local-uncommitted" : gitValue(["rev-parse", "HEAD"], "local-uncommitted")),
   ).trim();
   const sourceBranch = String(
     process.env.THEME_SOURCE_BRANCH || process.env.GITHUB_REF_NAME || gitValue(["branch", "--show-current"], "main"),

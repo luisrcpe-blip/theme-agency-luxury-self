@@ -8,6 +8,7 @@ import {
   CaretRight,
   CheckCircle,
   EnvelopeSimple,
+  GlobeSimple,
   Handbag,
   InstagramLogo,
   List,
@@ -19,6 +20,7 @@ import {
   Ruler,
   Trash,
   WarningCircle,
+  WhatsappLogo,
   X,
 } from "@phosphor-icons/react";
 import {
@@ -74,6 +76,39 @@ const commerceLabels = {
   de: { variant: "Variante", soldOut: "Ausverkauft", decrease: "Menge verringern", increase: "Menge erhöhen", orderNumber: "Bestellung", orderTotal: "Gesamt", orderStatus: "Status", previous: "Zurück", next: "Weiter", heroAlt: "Textiletikett von Agency Luxury Self", checkoutError: "Die Bestellung konnte nicht abgeschlossen werden. Prüfen Sie die Angaben und versuchen Sie es erneut.", orderRecorded: "Ihre Bestellung wurde erfolgreich erfasst." },
   fr: { variant: "Variante", soldOut: "Épuisé", decrease: "Réduire la quantité", increase: "Augmenter la quantité", orderNumber: "Commande", orderTotal: "Total", orderStatus: "Statut", previous: "Précédent", next: "Suivant", heroAlt: "Étiquette textile Agency Luxury Self", checkoutError: "La commande n’a pas pu être finalisée. Vérifiez les informations et réessayez.", orderRecorded: "Votre commande a bien été enregistrée." },
 };
+
+const PAGE_COVERS = {
+  home: "/assets/source/pages/home-cover.webp",
+  properties: "/assets/source/pages/properties-cover.webp",
+  services: "/assets/source/pages/management-cover.jpg",
+  interiors: "/assets/source/pages/interiors-cover.webp",
+  about: "/assets/source/pages/about-cover.jpg",
+  atelier: "/assets/source/pages/atelier-cover.webp",
+  blog: "/assets/source/pages/blog-cover.jpg",
+  contact: "/assets/source/pages/contact-cover.jpg",
+};
+
+const LOCALE_FLAGS = {
+  es: "/assets/source/brand/flags/es.svg",
+  en: "/assets/source/brand/flags/en.svg",
+  de: "/assets/source/brand/flags/de.svg",
+  fr: "/assets/source/brand/flags/fr.svg",
+};
+
+const HEADER_LOCALES = ["en", "es", "de", "fr"];
+const MENU_KEYS = ["about", "properties", "services", "interiors", "atelier", "blog", "contact"];
+
+const COVER_PAGES = new Set([
+  "home",
+  "properties",
+  "property",
+  "services",
+  "interiors",
+  "about",
+  "atelier",
+  "blog",
+  "contact",
+]);
 
 function useDialogA11y(open, onClose) {
   const dialogRef = useRef(null);
@@ -189,54 +224,54 @@ function orderStatusLabel(status, locale) {
   return labels[locale]?.[String(status || "").toUpperCase()] || String(status || "");
 }
 
-function Logo({ locale = "es" }) {
+function Logo({ locale = "es", tone = "dark" }) {
   return (
     <a className="brand" href={hrefFor(locale, "home")} aria-label="Agency Luxury Self">
-      LUXURY SELF
+      <img
+        className="brand-logo"
+        src={tone === "light" ? "/assets/source/brand/als-logo-light.webp" : "/assets/source/brand/als-logo-dark.webp"}
+        alt="Agency Luxury Self"
+      />
     </a>
   );
 }
 
-function Header({ locale, cartCount, onMenu, onInquiry, onSearch }) {
+function Header({ locale, onMenu, overCover }) {
   const t = copy[locale];
   const pathname = window.location.pathname;
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 24);
+
+  useEffect(() => {
+    const updateHeader = () => setScrolled(window.scrollY > 24);
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeader);
+  }, [pathname]);
+
+  const transparent = overCover && !scrolled;
   return (
-    <header className="site-header">
-      <div className="header-desktop-nav" aria-label={t.menu}>
-        {[...navKeys].map((key) => (
-          <a key={key} href={hrefFor(locale, key)}>
-            {t.nav[key]}
-          </a>
-        ))}
-      </div>
-      <button className="icon-button mobile-menu-button" type="button" onClick={onMenu} aria-label={t.menu}>
-        <List size={22} weight="light" />
-      </button>
-      <Logo locale={locale} />
-      <div className="header-actions">
-        <nav className="locale-switcher" aria-label={t.languageSelector}>
-          {LOCALES.map((item) => (
-            <a
-              key={item}
-              className={item === locale ? "active" : ""}
-              href={localizedHref(pathname, item)}
-              lang={item}
-              hrefLang={item}
-            >
-              {item.toUpperCase()}
-            </a>
-          ))}
-        </nav>
-        <button className="outline-button header-consult" type="button" onClick={onInquiry}>
-          {t.consult}
+    <header className={`site-header ${transparent ? "site-header--transparent" : "site-header--solid"}`}>
+      <div className="site-header-inner">
+        <button className="icon-button mobile-menu-button" type="button" onClick={onMenu} aria-label={t.menu}>
+          <List size={24} weight="light" />
         </button>
-        <a className="icon-button cart-button" href={hrefFor(locale, "cart")} aria-label={`${t.cart}: ${cartCount}`}>
-          <Handbag size={21} weight="light" />
-          <span>{cartCount}</span>
-        </a>
-        <button className="icon-button search-button" type="button" onClick={onSearch} aria-label={t.search}>
-          <MagnifyingGlass size={21} weight="light" />
-        </button>
+        <Logo locale={locale} tone={transparent ? "light" : "dark"} />
+        <div className="header-actions">
+          <nav className="locale-switcher" aria-label={t.languageSelector}>
+            {HEADER_LOCALES.map((item) => (
+              <a
+                key={item}
+                className={item === locale ? "active" : ""}
+                href={localizedHref(pathname, item)}
+                lang={item}
+                hrefLang={item}
+                aria-label={copy[item].localeName}
+              >
+                <img src={LOCALE_FLAGS[item]} alt="" />
+              </a>
+            ))}
+          </nav>
+        </div>
       </div>
     </header>
   );
@@ -250,13 +285,13 @@ function MobileMenu({ locale, open, onClose, onInquiry, onSearch }) {
     <div ref={dialogRef} className="overlay-shell" role="dialog" aria-modal="true" aria-label={t.menu}>
       <div className="mobile-menu-panel">
         <div className="overlay-header">
-          <Logo locale={locale} />
+          <Logo locale={locale} tone="light" />
           <button className="icon-button" type="button" onClick={onClose} aria-label={t.close}>
             <X size={24} weight="light" />
           </button>
         </div>
         <nav className="mobile-nav">
-          {[...navKeys, ...secondaryNavKeys].map((key) => (
+          {MENU_KEYS.map((key) => (
             <a key={key} href={hrefFor(locale, key)}>
               {t.nav[key]}
               <ArrowRight size={18} weight="light" />
@@ -266,11 +301,14 @@ function MobileMenu({ locale, open, onClose, onInquiry, onSearch }) {
         <button className="outline-button mobile-search" type="button" onClick={onSearch}>
           <MagnifyingGlass size={18} weight="light" /> {t.search}
         </button>
+        <a className="outline-button mobile-cart-link" href={hrefFor(locale, "cart")}>
+          <Handbag size={18} weight="light" /> {t.cart}
+        </a>
         <button className="solid-button mobile-consult" type="button" onClick={onInquiry}>
           {t.privateInquiry}
         </button>
         <nav className="mobile-locales" aria-label={t.languageSelector}>
-          {LOCALES.map((item) => (
+          {HEADER_LOCALES.map((item) => (
             <a key={item} href={localizedHref(window.location.pathname, item)} className={item === locale ? "active" : ""}>
               {copy[item].localeName}
             </a>
@@ -473,23 +511,13 @@ function HomePage({ locale, onInquiry }) {
   const featuredPrice = formatMoney(featured.price, featured.currency, locale);
   return (
     <main>
-      <section className="home-hero">
-        <div className="hero-image" role="img" aria-label={commerceLabels[locale].heroAlt} />
-        <div className="hero-copy">
-          <span className="eyebrow">Agency Luxury Self</span>
-          <h1>{t.heroTitle}</h1>
-          <span className="gold-rule" />
-          <p>{t.heroBody}</p>
-          <div className="hero-actions">
-            <a className="solid-button" href={hrefFor(locale, "properties")}>
-              {t.discover}
-            </a>
-            <a className="text-button" href={hrefFor(locale, "atelier")}>
-              {t.viewAtelier} <ArrowRight size={16} weight="light" />
-            </a>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image={PAGE_COVERS.home}
+        overlay="home"
+        eyebrow="Agency Luxury Self"
+        title={t.heroTitle}
+        lead={t.heroBody}
+      />
       <section className="curated-grid" aria-label={t.discover}>
         <article className="curated-card">
           <a className="card-image-wrap" href={hrefFor(locale, "properties", featured.slug)}>
@@ -612,6 +640,19 @@ function PageIntro({ eyebrow, title, lead }) {
   );
 }
 
+function PageHero({ image, eyebrow, title, lead, overlay = "standard", children }) {
+  return (
+    <section className={`page-hero page-hero--${overlay}`} style={{ backgroundImage: `url("${image}")` }}>
+      <div className="page-hero-content">
+        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+        <h1>{title}</h1>
+        {lead ? <p>{lead}</p> : null}
+        {children}
+      </div>
+    </section>
+  );
+}
+
 function PropertyCard({ locale, property }) {
   const t = copy[locale];
   return (
@@ -657,7 +698,7 @@ function PropertiesPage({ locale }) {
   });
   return (
     <main>
-      <PageIntro eyebrow={t.realEstateEyebrow} title={t.propertiesTitle} lead={t.propertiesLead} />
+      <PageHero image={PAGE_COVERS.properties} eyebrow={t.realEstateEyebrow} title={t.propertiesTitle} lead={t.propertiesLead} />
       <section className="filter-bar section-pad" aria-label={t.propertiesTitle}>
         <div className="filter-tabs">
           {[
@@ -808,7 +849,7 @@ function AtelierPage({ locale }) {
   const products = normalizedProducts(locale);
   return (
     <main>
-      <PageIntro eyebrow="Agency Luxury Self Atelier" title={t.atelierTitle} lead={t.atelierLead} />
+      <PageHero image={PAGE_COVERS.atelier} eyebrow="Agency Luxury Self Atelier" title={t.atelierTitle} lead={t.atelierLead} />
       <section className="product-grid section-pad">
         {products.map((product) => <ProductCard key={product.id} locale={locale} product={product} />)}
       </section>
@@ -891,7 +932,7 @@ function BlogPage({ locale }) {
   const articles = articlesForLocale(locale);
   return (
     <main>
-      <PageIntro eyebrow="Agency Luxury Self Journal" title={t.blogTitle} lead={t.blogLead} />
+      <PageHero image={PAGE_COVERS.blog} eyebrow="Agency Luxury Self Journal" title={t.blogTitle} lead={t.blogLead} />
       <section className="article-grid article-index section-pad">
         {articles.map((article) => <ArticleCard key={article.id} locale={locale} article={article} />)}
       </section>
@@ -944,7 +985,8 @@ function ArticlePage({ locale, slug, onInquiry }) {
 
 const serviceContent = {
   services: {
-    image: "/assets/images/property-key.webp",
+    image: PAGE_COVERS.services,
+    overlay: "management",
     eyebrow: {
       es: "Gestión de propiedades y lifestyle",
       en: "Property & lifestyle management",
@@ -959,7 +1001,8 @@ const serviceContent = {
     },
   },
   interiors: {
-    image: "/assets/images/atelier-travertine-bowl.png",
+    image: PAGE_COVERS.interiors,
+    overlay: "standard",
     eyebrow: {
       es: "Diseño de interiores",
       en: "Interior design",
@@ -974,7 +1017,8 @@ const serviceContent = {
     },
   },
   about: {
-    image: "/assets/images/hero-linen-label.webp",
+    image: PAGE_COVERS.about,
+    overlay: "standard",
     eyebrow: {
       es: "Agency Luxury Self",
       en: "Agency Luxury Self",
@@ -990,22 +1034,18 @@ const serviceContent = {
   },
 };
 
-function ServicePage({ locale, page, onInquiry }) {
+function ServicePage({ locale, page }) {
   const t = copy[locale];
   const content = serviceContent[page];
   return (
     <main>
-      <section className="service-hero">
-        <div><img src={content.image} alt={content.title[locale]} /></div>
-        <div>
-          <span className="eyebrow">{content.eyebrow[locale]}</span>
-          <h1>{content.title[locale]}</h1>
-          <p>{page === "services" ? t.managementMeta : t.heroBody}</p>
-          <button className="solid-button" type="button" onClick={() => onInquiry({ kind: "service", itemName: content.title[locale], cta: `${page}-hero` })}>
-            {t.privateInquiry}
-          </button>
-        </div>
-      </section>
+      <PageHero
+        image={content.image}
+        overlay={content.overlay}
+        eyebrow={content.eyebrow[locale]}
+        title={content.title[locale]}
+        lead={page === "services" ? t.managementMeta : t.heroBody}
+      />
       <section className="service-principles section-pad">
         {[t.nav.properties, t.nav.services, t.nav.interiors || t.nav.atelier].map((label, index) => (
           <article key={`${label}-${index}`}>
@@ -1023,7 +1063,7 @@ function ContactPage({ locale }) {
   const t = copy[locale];
   return (
     <main>
-      <PageIntro eyebrow={t.privateAdvisory} title={t.inquiryTitle} lead={t.inquiryBody} />
+      <PageHero image={PAGE_COVERS.contact} overlay="contact" eyebrow={t.privateAdvisory} title={t.inquiryTitle} lead={t.inquiryBody} />
       <section className="contact-layout section-pad">
         <div className="contact-details">
           <h2>Agency Luxury Self</h2>
@@ -1201,22 +1241,34 @@ function Footer({ locale }) {
   const t = copy[locale];
   return (
     <footer className="site-footer">
-      <div><Logo locale={locale} /><p>{t.footerClaim}</p></div>
-      <nav>
-        {[...navKeys, ...secondaryNavKeys].map((key) => <a key={key} href={hrefFor(locale, key)}>{t.nav[key]}</a>)}
-      </nav>
-      <div className="footer-contact">
-        <a href="tel:+34613277859">+34 613 27 78 59</a>
-        <a href="mailto:analucia@agencyluxuryself.com">analucia@agencyluxuryself.com</a>
-        <a href="https://www.instagram.com/agency_luxuryself/" target="_blank" rel="noreferrer">Instagram</a>
+      <div className="footer-main">
+        <Logo locale={locale} tone="dark" />
+        <div className="footer-contact-grid">
+          <a href="https://wa.me/34613277859" target="_blank" rel="noreferrer">
+            <WhatsappLogo size={20} weight="regular" aria-hidden="true" />
+            <span>+34 613 27 78 59</span>
+          </a>
+          <a href="https://www.instagram.com/agency_luxuryself/" target="_blank" rel="noreferrer">
+            <InstagramLogo size={20} weight="regular" aria-hidden="true" />
+            <span>agency_luxuryself</span>
+          </a>
+          <a href="mailto:analucia@agencyluxuryself.com">
+            <EnvelopeSimple size={20} weight="regular" aria-hidden="true" />
+            <span>analucia@agencyluxuryself.com</span>
+          </a>
+          <a href="https://agencyluxuryself.com/" target="_blank" rel="noreferrer">
+            <GlobeSimple size={20} weight="regular" aria-hidden="true" />
+            <span>agencyluxuryself.com</span>
+          </a>
+        </div>
       </div>
       <div className="footer-bottom">
-        <span>© {new Date().getFullYear()} Agency Luxury Self. {t.rights}</span>
         <nav>
           <a href={hrefFor(locale, "privacy")}>{routeLabel(locale, "privacy")}</a>
           <a href={hrefFor(locale, "cookies")}>{routeLabel(locale, "cookies")}</a>
           <a href={hrefFor(locale, "legal")}>{routeLabel(locale, "legal")}</a>
         </nav>
+        <p>© {new Date().getFullYear()} Agency Luxury Self. {t.rights}</p>
       </div>
     </footer>
   );
@@ -1224,8 +1276,8 @@ function Footer({ locale }) {
 
 function routeLabel(locale, page) {
   const labels = {
-    privacy: { es: "Privacidad", en: "Privacy", de: "Datenschutz", fr: "Confidentialité" },
-    cookies: { es: "Cookies", en: "Cookies", de: "Cookies", fr: "Cookies" },
+    privacy: { es: "Política de privacidad", en: "Privacy policy", de: "Datenschutz", fr: "Politique de confidentialité" },
+    cookies: { es: "Política de cookies", en: "Cookie policy", de: "Cookie-Richtlinie", fr: "Politique de cookies" },
     legal: { es: "Aviso legal", en: "Legal", de: "Impressum", fr: "Mentions légales" },
   };
   return labels[page][locale];
@@ -1240,7 +1292,7 @@ function PageRenderer({ route, cart, context, onInquiry }) {
   if (page === "product") return <ProductPage locale={locale} slug={route.slug} />;
   if (page === "blog") return <BlogPage locale={locale} />;
   if (page === "article") return <ArticlePage locale={locale} slug={route.slug} onInquiry={onInquiry} />;
-  if (["services", "interiors", "about"].includes(page)) return <ServicePage locale={locale} page={page} onInquiry={onInquiry} />;
+  if (["services", "interiors", "about"].includes(page)) return <ServicePage locale={locale} page={page} />;
   if (page === "contact") return <ContactPage locale={locale} />;
   if (page === "cart") return <CartPage locale={locale} cart={cart} />;
   if (page === "checkout") return <CheckoutPage locale={locale} cart={cart} />;
@@ -1256,6 +1308,9 @@ export function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [inquiry, setInquiry] = useState({ open: false, context: { kind: "general", cta: "header" } });
   const locale = route.locale;
+  const overCover = route.page === "property"
+    ? Boolean(propertyForRoute(route.slug, locale))
+    : COVER_PAGES.has(route.page);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -1269,13 +1324,11 @@ export function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${overCover ? "app-shell--cover-header" : "app-shell--solid-header"}`}>
       <Header
         locale={locale}
-        cartCount={cart.itemCount}
         onMenu={() => setMenuOpen(true)}
-        onInquiry={() => openInquiry()}
-        onSearch={() => setSearchOpen(true)}
+        overCover={overCover}
       />
       <PageRenderer route={route} cart={cart} context={context} onInquiry={openInquiry} />
       <Footer locale={locale} />

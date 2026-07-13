@@ -10,6 +10,28 @@ export const MANIFEST_FILE = "nuklo.template.json";
 export const INTEGRITY_FILE = "integrity.json";
 
 export const LOCALES = ["es", "en", "de", "fr"];
+export const PAGE_COVER_PATHS = Object.freeze({
+  home: "/assets/source/pages/home-cover.webp",
+  properties: "/assets/source/pages/properties-cover.webp",
+  services: "/assets/source/pages/management-cover.jpg",
+  interiors: "/assets/source/pages/interiors-cover.webp",
+  about: "/assets/source/pages/about-cover.jpg",
+  atelier: "/assets/source/pages/atelier-cover.webp",
+  blog: "/assets/source/pages/blog-cover.jpg",
+  contact: "/assets/source/pages/contact-cover.jpg",
+});
+export const SOURCE_MEDIA_ASSETS = Object.freeze([
+  { key: "agency-luxury-self-cover-home", path: PAGE_COVER_PATHS.home, kind: "LANDING", title: "Agency Luxury Self — home", alt: "Etiqueta textil de Agency Luxury Self", tags: ["agency-luxury-self", "cover", "home"] },
+  { key: "agency-luxury-self-cover-properties", path: PAGE_COVER_PATHS.properties, kind: "LANDING", title: "Agency Luxury Self — propiedades", alt: "Residencia contemporánea junto al mar", tags: ["agency-luxury-self", "cover", "properties"] },
+  { key: "agency-luxury-self-cover-management", path: PAGE_COVER_PATHS.services, kind: "LANDING", title: "Agency Luxury Self — gestión", alt: "Jardín y piscina de una propiedad gestionada", tags: ["agency-luxury-self", "cover", "management"] },
+  { key: "agency-luxury-self-cover-interiors", path: PAGE_COVER_PATHS.interiors, kind: "LANDING", title: "Agency Luxury Self — interiores", alt: "Textiles y cojines seleccionados para interiorismo", tags: ["agency-luxury-self", "cover", "interiors"] },
+  { key: "agency-luxury-self-cover-about", path: PAGE_COVER_PATHS.about, kind: "LANDING", title: "Agency Luxury Self — nosotros", alt: "Papelería y tarjetas de Agency Luxury Self", tags: ["agency-luxury-self", "cover", "about"] },
+  { key: "agency-luxury-self-cover-atelier", path: PAGE_COVER_PATHS.atelier, kind: "LANDING", title: "Agency Luxury Self — Atelier", alt: "Manos trabajando una pieza textil artesanal", tags: ["agency-luxury-self", "cover", "atelier"] },
+  { key: "agency-luxury-self-cover-blog", path: PAGE_COVER_PATHS.blog, kind: "LANDING", title: "Agency Luxury Self — Journal", alt: "Terraza mediterránea con vistas al mar", tags: ["agency-luxury-self", "cover", "blog"] },
+  { key: "agency-luxury-self-cover-contact", path: PAGE_COVER_PATHS.contact, kind: "LANDING", title: "Agency Luxury Self — contacto", alt: "Villa con jardín y piscina", tags: ["agency-luxury-self", "cover", "contact"] },
+  { key: "agency-luxury-self-logo-light", path: "/assets/source/brand/als-logo-light.webp", kind: "BRANDING", title: "Agency Luxury Self — logo claro", alt: "Agency Luxury Self", tags: ["agency-luxury-self", "logo", "light"] },
+  { key: "agency-luxury-self-logo-dark", path: "/assets/source/brand/als-logo-dark.webp", kind: "BRANDING", title: "Agency Luxury Self — logo oscuro", alt: "Agency Luxury Self", tags: ["agency-luxury-self", "logo", "dark"] },
+]);
 export const LOCALE_DEFINITIONS = [
   { code: "es", prefix: "/es", hreflang: "es" },
   { code: "en", prefix: "/en", hreflang: "en" },
@@ -375,7 +397,7 @@ function buildStaticRoutes(baseUrl) {
           title,
           description,
           canonical: new URL(path.replace(/^\//, ""), baseUrl).toString(),
-          ogImage: absoluteAsset(baseUrl, "/assets/images/hero-linen-label.webp"),
+          ogImage: absoluteAsset(baseUrl, PAGE_COVER_PATHS[group.page] || PAGE_COVER_PATHS.home),
           private: Boolean(group.private),
         },
       };
@@ -488,7 +510,7 @@ function buildDynamicRoutes(baseUrl) {
           title,
           description,
           canonical: "",
-          ogImage: absoluteAsset(baseUrl, "/assets/images/hero-linen-label.webp"),
+          ogImage: absoluteAsset(baseUrl, PAGE_COVER_PATHS[group.page] || PAGE_COVER_PATHS.home),
           private: true,
         },
       };
@@ -688,32 +710,10 @@ export async function buildReleaseModel({ baseUrl, sourceCommit, sourceBranch })
       locales: LOCALE_DEFINITIONS,
     },
     routes: internalRoutes.map(stripRoute),
-    mediaAssets: [
-      {
-        key: "agency-luxury-self-hero",
-        url: absoluteAsset(releaseBase, "/assets/images/hero-linen-label.webp"),
-        kind: "BRANDING",
-        title: "Agency Luxury Self — hero",
-        alt: "Etiqueta textil de Agency Luxury Self",
-        tags: ["agency-luxury-self", "hero", "branding"],
-      },
-      {
-        key: "agency-luxury-self-property",
-        url: absoluteAsset(releaseBase, "/assets/images/property-pool.jpg"),
-        kind: "COMMERCE",
-        title: "Agency Luxury Self — propiedad",
-        alt: "Piscina y arquitectura residencial seleccionada",
-        tags: ["agency-luxury-self", "property", "real-estate"],
-      },
-      {
-        key: "agency-luxury-self-atelier",
-        url: absoluteAsset(releaseBase, "/assets/images/atelier-travertine-bowl.png"),
-        kind: "COMMERCE",
-        title: "Agency Luxury Self — Atelier",
-        alt: "Cuenco escultórico de travertino",
-        tags: ["agency-luxury-self", "atelier", "product"],
-      },
-    ],
+    mediaAssets: SOURCE_MEDIA_ASSETS.map(({ path, ...asset }) => ({
+      ...asset,
+      url: absoluteAsset(releaseBase, path),
+    })),
     routeSeo: internalRoutes.map(manifestSeo),
     legacySeo: {
       schemaVersion: 1,
