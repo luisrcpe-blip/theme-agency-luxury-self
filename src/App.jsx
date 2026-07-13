@@ -213,7 +213,7 @@ function Header({ locale, cartCount, onMenu, onInquiry, onSearch }) {
       </button>
       <Logo locale={locale} />
       <div className="header-actions">
-        <nav className="locale-switcher" aria-label="Language selector">
+        <nav className="locale-switcher" aria-label={t.languageSelector}>
           {LOCALES.map((item) => (
             <a
               key={item}
@@ -268,7 +268,7 @@ function MobileMenu({ locale, open, onClose, onInquiry, onSearch }) {
         <button className="solid-button mobile-consult" type="button" onClick={onInquiry}>
           {t.privateInquiry}
         </button>
-        <nav className="mobile-locales" aria-label="Language selector">
+        <nav className="mobile-locales" aria-label={t.languageSelector}>
           {LOCALES.map((item) => (
             <a key={item} href={localizedHref(window.location.pathname, item)} className={item === locale ? "active" : ""}>
               {copy[item].localeName}
@@ -307,11 +307,11 @@ function SearchOverlay({ locale, open, onClose }) {
         href: hrefFor(locale, "blog", article.slug),
       }));
     const serviceResults = Object.entries(serviceContent)
-      .filter(([key, content]) => `${t.nav[key] || ""} ${content.title[locale]} ${content.eyebrow} ${key === "services" ? `${t.managementTitle} ${t.managementMeta}` : ""}`.toLocaleLowerCase(locale).includes(term))
+      .filter(([key, content]) => `${t.nav[key] || ""} ${content.title[locale]} ${content.eyebrow[locale]} ${key === "services" ? `${t.managementTitle} ${t.managementMeta}` : ""}`.toLocaleLowerCase(locale).includes(term))
       .map(([key, content]) => ({
         key: `service-${key}`,
         label: content.title[locale],
-        meta: t.nav[key] || content.eyebrow,
+        meta: t.nav[key] || content.eyebrow[locale],
         href: hrefFor(locale, key),
       }));
     return [...propertyResults, ...serviceResults, ...articleResults].slice(0, 6);
@@ -562,7 +562,7 @@ function EditorialIntro({ locale }) {
   }[locale];
   return (
     <section className="editorial-intro section-pad">
-      <span className="eyebrow">Luxury real estate & lifestyle</span>
+      <span className="eyebrow">{t.editorialEyebrow}</span>
       <h2>{title}</h2>
       <p>{t.heroBody}</p>
       <div className="editorial-links">
@@ -660,7 +660,7 @@ function PropertiesPage({ locale }) {
   });
   return (
     <main>
-      <PageIntro eyebrow="Real estate" title={t.propertiesTitle} lead={t.propertiesLead} />
+      <PageIntro eyebrow={t.realEstateEyebrow} title={t.propertiesTitle} lead={t.propertiesLead} />
       <section className="filter-bar section-pad" aria-label={t.propertiesTitle}>
         <div className="filter-tabs">
           {[
@@ -686,9 +686,9 @@ function PropertiesPage({ locale }) {
           <span>{t.minPrice}</span>
           <select value={minPrice} onChange={(event) => setMinPrice(Number(event.target.value))}>
             <option value="0">{t.all}</option>
-            <option value="500000">500.000 €</option>
-            <option value="1000000">1.000.000 €</option>
-            <option value="2000000">2.000.000 €</option>
+            <option value="500000">{formatMoney(500000, "EUR", locale)}</option>
+            <option value="1000000">{formatMoney(1000000, "EUR", locale)}</option>
+            <option value="2000000">{formatMoney(2000000, "EUR", locale)}</option>
           </select>
         </label>
         <button className="text-button" type="button" onClick={() => { setType("all"); setLocation(""); setMinPrice(0); }}>
@@ -948,7 +948,12 @@ function ArticlePage({ locale, slug, onInquiry }) {
 const serviceContent = {
   services: {
     image: "/assets/images/property-key.webp",
-    eyebrow: "Property & lifestyle management",
+    eyebrow: {
+      es: "Gestión de propiedades y lifestyle",
+      en: "Property & lifestyle management",
+      de: "Immobilien- & Lifestyle-Management",
+      fr: "Gestion immobilière & art de vivre",
+    },
     title: {
       es: "Su propiedad, impecable incluso cuando usted no está.",
       en: "Your property, impeccable even when you are away.",
@@ -958,7 +963,12 @@ const serviceContent = {
   },
   interiors: {
     image: "/assets/images/atelier-travertine-bowl.png",
-    eyebrow: "Interior design",
+    eyebrow: {
+      es: "Diseño de interiores",
+      en: "Interior design",
+      de: "Innenarchitektur",
+      fr: "Design d’intérieur",
+    },
     title: {
       es: "Interiores serenos, diseñados para vivir y perdurar.",
       en: "Calm interiors, designed to be lived in and to last.",
@@ -968,7 +978,12 @@ const serviceContent = {
   },
   about: {
     image: "/assets/images/hero-linen-label.webp",
-    eyebrow: "Agency Luxury Self",
+    eyebrow: {
+      es: "Agency Luxury Self",
+      en: "Agency Luxury Self",
+      de: "Agency Luxury Self",
+      fr: "Agency Luxury Self",
+    },
     title: {
       es: "Criterio local, estándares internacionales y absoluta discreción.",
       en: "Local judgment, international standards and absolute discretion.",
@@ -986,7 +1001,7 @@ function ServicePage({ locale, page, onInquiry }) {
       <section className="service-hero">
         <div><img src={content.image} alt={content.title[locale]} /></div>
         <div>
-          <span className="eyebrow">{content.eyebrow}</span>
+          <span className="eyebrow">{content.eyebrow[locale]}</span>
           <h1>{content.title[locale]}</h1>
           <p>{page === "services" ? t.managementMeta : t.heroBody}</p>
           <button className="solid-button" type="button" onClick={() => onInquiry({ kind: "service", itemName: content.title[locale], cta: `${page}-hero` })}>
@@ -1011,7 +1026,7 @@ function ContactPage({ locale }) {
   const t = copy[locale];
   return (
     <main>
-      <PageIntro eyebrow="Private advisory" title={t.inquiryTitle} lead={t.inquiryBody} />
+      <PageIntro eyebrow={t.privateAdvisory} title={t.inquiryTitle} lead={t.inquiryBody} />
       <section className="contact-layout section-pad">
         <div className="contact-details">
           <h2>Agency Luxury Self</h2>
@@ -1117,7 +1132,7 @@ function CheckoutPage({ locale, cart }) {
   }
   return (
     <main>
-      <PageIntro eyebrow="Secure checkout" title={t.checkoutTitle} />
+      <PageIntro eyebrow={t.secureCheckout} title={t.checkoutTitle} />
       <form className="checkout-form section-pad" onSubmit={handleSubmit}>
         <label><span>{t.name}</span><input name="name" autoComplete="name" required /></label>
         <label><span>{t.email}</span><input name="email" type="email" autoComplete="email" required /></label>

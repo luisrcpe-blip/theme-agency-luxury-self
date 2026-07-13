@@ -95,12 +95,12 @@ function validateManifestShape(manifest) {
   assert(manifest.id === "agency-luxury-self", "Manifest theme id invalido.");
   assert(manifest.mode === "sales", "Manifest mode debe ser sales.");
   assert(manifest.contractVersion === "sales@1.1.0", "Manifest debe usar sales@1.1.0.");
-  assert(manifest.templateVersion === "1.0.1", "Manifest debe usar templateVersion 1.0.1.");
+  assert(manifest.templateVersion === "1.0.2", "Manifest debe usar templateVersion 1.0.2.");
   assert(manifest.renderer === "remote-static-app", "Manifest renderer debe ser remote-static-app.");
   assert(manifest.entry === "index.html", "Manifest entry debe ser index.html.");
   const appUrl = new URL(manifest.appUrl);
   assert(appUrl.protocol === "https:", "Manifest appUrl debe usar HTTPS.");
-  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.1/"), "Manifest appUrl no es el release inmutable esperado.");
+  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.2/"), "Manifest appUrl no es el release inmutable esperado.");
   assert(Array.isArray(manifest.surfaces), "Manifest surfaces debe ser un array.");
   assert(Array.isArray(manifest.capabilities), "Manifest capabilities debe ser un array.");
   for (const surface of REQUIRED_SURFACES) assert(manifest.surfaces.includes(surface), `Falta surface ${surface}.`);

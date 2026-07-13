@@ -186,6 +186,11 @@ export const routeSegments = {
 export const copy = {
   es: {
     localeName: "Español",
+    languageSelector: "Selector de idioma",
+    editorialEyebrow: "Inmobiliaria de lujo y estilo de vida",
+    realEstateEyebrow: "Inmobiliaria",
+    privateAdvisory: "Asesoramiento privado",
+    secureCheckout: "Pago seguro",
     nav: {
       properties: "Propiedades",
       interiors: "Interiores",
@@ -281,6 +286,11 @@ export const copy = {
   },
   en: {
     localeName: "English",
+    languageSelector: "Language selector",
+    editorialEyebrow: "Luxury real estate & lifestyle",
+    realEstateEyebrow: "Real estate",
+    privateAdvisory: "Private advisory",
+    secureCheckout: "Secure checkout",
     nav: {
       properties: "Properties",
       interiors: "Interiors",
@@ -376,6 +386,11 @@ export const copy = {
   },
   de: {
     localeName: "Deutsch",
+    languageSelector: "Sprachauswahl",
+    editorialEyebrow: "Luxusimmobilien & Lifestyle",
+    realEstateEyebrow: "Immobilien",
+    privateAdvisory: "Private Beratung",
+    secureCheckout: "Sicherer Checkout",
     nav: {
       properties: "Immobilien",
       interiors: "Interieur",
@@ -470,6 +485,11 @@ export const copy = {
   },
   fr: {
     localeName: "Français",
+    languageSelector: "Sélecteur de langue",
+    editorialEyebrow: "Immobilier de luxe & art de vivre",
+    realEstateEyebrow: "Immobilier",
+    privateAdvisory: "Conseil privé",
+    secureCheckout: "Paiement sécurisé",
     nav: {
       properties: "Propriétés",
       interiors: "Intérieurs",
