@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "themeId": "agency-luxury-self",
   "name": "Agency Luxury Self",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "contractVersion": "sales@1.1.0",
-  "publicBaseUrl": "https://themes.nuklo.cloud/agency-luxury-self/1.0.2/",
+  "publicBaseUrl": "https://themes.nuklo.cloud/agency-luxury-self/1.0.3/",
   "sourceHost": "agencyluxuryself.com",
   "defaultLocale": "es",
   "locales": ["es", "en", "de", "fr"]

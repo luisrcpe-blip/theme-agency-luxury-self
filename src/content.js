@@ -1,6 +1,7 @@
 import articles from "./generated/articles.json";
 import properties from "./generated/properties.json";
 import localizedContent from "./generated/localized-content.json";
+import { localizePropertyFacts } from "./property-localization.js";
 
 const RELEASE_BASE_PATH = (() => {
   const value = String(import.meta.env.BASE_URL || "/");
@@ -664,7 +665,11 @@ export function propertiesForLocale(locale) {
   return properties.map((property) => {
     const localized = propertyLocalizationBySlug.get(property.slug)?.[locale];
     const result = localized ? { ...property, ...localized, slug: property.slug } : property;
-    return { ...result, bodyHtml: sanitizeRichHtml(result.bodyHtml) };
+    return {
+      ...result,
+      ...localizePropertyFacts(result, locale),
+      bodyHtml: sanitizeRichHtml(result.bodyHtml),
+    };
   });
 }
 

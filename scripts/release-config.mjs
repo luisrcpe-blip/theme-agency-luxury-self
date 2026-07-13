@@ -665,7 +665,7 @@ export async function buildReleaseModel({ baseUrl, sourceCommit, sourceBranch })
     renderer: "remote-static-app",
     appUrl: releaseBase,
     assetsBase: releaseBase,
-    previewUrl: releaseBase,
+    previewUrl: new URL("es/index.html", releaseBase).toString(),
     surfaces: ["SHOP_HOME", "SHOP_COLLECTION", "SHOP_PRODUCT", "CONTENT_PAGE"],
     capabilities: [
       "tenant",

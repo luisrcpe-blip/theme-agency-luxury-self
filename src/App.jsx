@@ -35,6 +35,7 @@ import {
   resolveRoute,
   secondaryNavKeys,
 } from "./content.js";
+import { propertyMatchesType } from "./property-localization.js";
 import {
   createOrder,
   formatMoney,
@@ -651,11 +652,7 @@ function PropertiesPage({ locale }) {
   const [minPrice, setMinPrice] = useState(0);
   const locations = [...new Set(localizedProperties.map((property) => property.location).filter(Boolean))].sort();
   const filtered = localizedProperties.filter((property) => {
-    const propertyType = (property.type || "").toLowerCase();
-    const matchesType =
-      type === "all" ||
-      (type === "villa" && propertyType.includes("villa")) ||
-      (type === "apartment" && /(apart|penthouse)/.test(propertyType + property.title.toLowerCase()));
+    const matchesType = propertyMatchesType(property, type);
     return matchesType && (!location || property.location === location) && (!minPrice || property.price >= minPrice);
   });
   return (

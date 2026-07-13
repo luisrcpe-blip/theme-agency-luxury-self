@@ -12,6 +12,11 @@ import {
   PROJECT_ROOT,
   loadReleaseSource,
 } from "./release-config.mjs";
+import {
+  PROPERTY_LOCALES,
+  localizePropertyFacts,
+  propertyMatchesType,
+} from "../src/property-localization.js";
 
 const MAX_MANIFEST_BYTES = 256 * 1024;
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
@@ -32,6 +37,24 @@ const REQUIRED_CAPABILITIES = [
   "contentPage",
 ];
 const PRIVATE_KINDS = new Set(["cart", "checkout", "order"]);
+const EXPECTED_PROPERTY_TYPES = {
+  Villa: {
+    typeKey: "villa",
+    labels: { es: "Villa", en: "Villa", de: "Villa", fr: "Villa" },
+  },
+  Apartamento: {
+    typeKey: "apartment",
+    labels: { es: "Apartamento", en: "Apartment", de: "Wohnung", fr: "Appartement" },
+  },
+  Penthouse: {
+    typeKey: "apartment",
+    labels: { es: "Ático", en: "Penthouse", de: "Penthouse", fr: "Penthouse" },
+  },
+};
+const EXPECTED_PROPERTY_STATUS = {
+  statusKey: "for-sale",
+  labels: { es: "En venta", en: "For sale", de: "Zum Verkauf", fr: "À vendre" },
+};
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -95,12 +118,16 @@ function validateManifestShape(manifest) {
   assert(manifest.id === "agency-luxury-self", "Manifest theme id invalido.");
   assert(manifest.mode === "sales", "Manifest mode debe ser sales.");
   assert(manifest.contractVersion === "sales@1.1.0", "Manifest debe usar sales@1.1.0.");
-  assert(manifest.templateVersion === "1.0.2", "Manifest debe usar templateVersion 1.0.2.");
+  assert(manifest.templateVersion === "1.0.3", "Manifest debe usar templateVersion 1.0.3.");
   assert(manifest.renderer === "remote-static-app", "Manifest renderer debe ser remote-static-app.");
   assert(manifest.entry === "index.html", "Manifest entry debe ser index.html.");
   const appUrl = new URL(manifest.appUrl);
   assert(appUrl.protocol === "https:", "Manifest appUrl debe usar HTTPS.");
-  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.2/"), "Manifest appUrl no es el release inmutable esperado.");
+  assert(appUrl.pathname.endsWith("/agency-luxury-self/1.0.3/"), "Manifest appUrl no es el release inmutable esperado.");
+  assert(
+    manifest.previewUrl === new URL("es/index.html", manifest.appUrl).toString(),
+    "Manifest previewUrl debe apuntar al HTML humano espanol.",
+  );
   assert(Array.isArray(manifest.surfaces), "Manifest surfaces debe ser un array.");
   assert(Array.isArray(manifest.capabilities), "Manifest capabilities debe ser un array.");
   for (const surface of REQUIRED_SURFACES) assert(manifest.surfaces.includes(surface), `Falta surface ${surface}.`);
@@ -203,8 +230,32 @@ async function validateIntegrity(manifestRaw, manifest, integrity) {
   return actualFiles.length + 1;
 }
 
+function validatePropertyLocalization(source) {
+  assert(source.properties.length === 11, `Se esperaban 11 propiedades fuente; hay ${source.properties.length}.`);
+  let localizedFacts = 0;
+  for (const property of source.properties) {
+    const expectedType = EXPECTED_PROPERTY_TYPES[property.type];
+    assert(expectedType, `Tipo de propiedad sin expectativa estable: ${property.type}`);
+    assert(property.status === "En Venta", `Estado fuente inesperado en ${property.slug}: ${property.status}`);
+    for (const locale of PROPERTY_LOCALES) {
+      const facts = localizePropertyFacts(property, locale);
+      assert(facts.typeKey === expectedType.typeKey, `typeKey invalido para ${property.slug}:${locale}.`);
+      assert(facts.type === expectedType.labels[locale], `Tipo no localizado para ${property.slug}:${locale}.`);
+      assert(facts.statusKey === EXPECTED_PROPERTY_STATUS.statusKey, `statusKey invalido para ${property.slug}:${locale}.`);
+      assert(facts.status === EXPECTED_PROPERTY_STATUS.labels[locale], `Estado no localizado para ${property.slug}:${locale}.`);
+      assert(propertyMatchesType(facts, "all"), `Filtro all excluye ${property.slug}:${locale}.`);
+      assert(propertyMatchesType(facts, expectedType.typeKey), `Filtro ${expectedType.typeKey} excluye ${property.slug}:${locale}.`);
+      const oppositeType = expectedType.typeKey === "villa" ? "apartment" : "villa";
+      assert(!propertyMatchesType(facts, oppositeType), `Filtro ${oppositeType} incluye ${property.slug}:${locale}.`);
+      localizedFacts += 1;
+    }
+  }
+  return localizedFacts;
+}
+
 async function validateSeoMigration(manifest) {
   const source = await loadReleaseSource();
+  const localizedPropertyFacts = validatePropertyLocalization(source);
   const redirects = JSON.parse(await readFile(resolve(OUT_DIR, "redirects.json"), "utf8"));
   const redirectFrom = new Set(redirects.redirects.map((entry) => normalizePath(entry.from)));
   const gonePaths = new Set(redirects.gone.map((entry) => normalizePath(entry.path)));
@@ -240,6 +291,7 @@ async function validateSeoMigration(manifest) {
     articleRedirects: source.sourceArticles.length,
     propertyRedirects: source.properties.length,
     gone: redirects.gone.length,
+    localizedPropertyFacts,
   };
 }
 
@@ -285,6 +337,7 @@ async function main() {
   console.log(`  ${routeResult.prerenderedProperties} property pages and ${routeResult.prerenderedArticles} article pages prerendered with JSON-LD`);
   console.log(`  ${fileCount} integrity-tracked files`);
   console.log(`  ${migration.articleRedirects} article redirects, ${migration.propertyRedirects} property redirects, ${migration.gone} gone routes`);
+  console.log(`  ${migration.localizedPropertyFacts} localized property fact sets with stable filter keys`);
   console.log(`  exact Nuklo Core contract: ${exactCore ? "passed" : "not available"}`);
 }
 

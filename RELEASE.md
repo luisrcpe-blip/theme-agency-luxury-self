@@ -9,7 +9,7 @@ Este repositorio produce un release inmutable `remote-static-app` para el contra
 - `npm run verify:release`: valida manifest, rutas, HTML, metadatos y checksums.
 - `npm run check:links`: revisa referencias locales, rutas declaradas y URLs del sitemap.
 
-La URL importable es `https://themes.nuklo.cloud/agency-luxury-self/1.0.2/nuklo.template.json`. El host de releases se bloquea en `robots.txt` para evitar contenido duplicado; el tenant de Nuklo publica canonical, hreflang, robots y sitemap en su propio dominio.
+La URL importable es `https://themes.nuklo.cloud/agency-luxury-self/1.0.3/nuklo.template.json`. El host de releases se bloquea en `robots.txt` para evitar contenido duplicado; el tenant de Nuklo publica canonical, hreflang, robots y sitemap en su propio dominio.
 
 En CI se debe pasar `THEME_SOURCE_COMMIT` (normalmente `GITHUB_SHA`) y, si corresponde, `THEME_SOURCE_BRANCH`. Un build local sin commit usa `local-uncommitted` de forma visible para QA, pero no debe registrarse como release de produccion.
 
