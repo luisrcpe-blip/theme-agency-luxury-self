@@ -929,12 +929,18 @@ function PageHero({ image, eyebrow, title, lead, overlay = "standard", children 
   );
 }
 
-function PropertyCard({ locale, property }) {
+function PropertyCard({ locale, property, priority = false }) {
   const t = copy[locale];
   return (
     <article className="property-card">
       <a className="property-image" href={hrefFor(locale, "properties", property.slug)}>
-        <img src={property.heroImage} alt={property.title} loading="lazy" />
+        <img
+          src={property.heroImage}
+          alt={property.title}
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
+        />
         {property.status ? <span className="image-label">{property.status}</span> : null}
       </a>
       <div className="property-card-body">
@@ -1012,8 +1018,8 @@ function PropertiesPage({ locale }) {
       <section className="property-results section-pad">
         <p className="result-count">{filtered.length} {t.results}</p>
         <div className="property-grid">
-          {filtered.map((property) => (
-            <PropertyCard key={property.id} locale={locale} property={property} />
+          {filtered.map((property, index) => (
+            <PropertyCard key={property.id} locale={locale} property={property} priority={index < 4} />
           ))}
         </div>
       </section>
@@ -1033,7 +1039,7 @@ function PropertyPage({ locale, slug, onInquiry }) {
   return (
     <main>
       <section className="detail-hero">
-        <img src={property.heroImage} alt={property.title} />
+        <img src={property.heroImage} alt={property.title} loading="eager" fetchPriority="high" decoding="async" />
         <div className="detail-hero-overlay" />
         <div className="detail-hero-copy">
           <span className="eyebrow">{property.status || t.propertyCategory}</span>
@@ -1062,30 +1068,36 @@ function PropertyPage({ locale, slug, onInquiry }) {
           {t.requestProperty}
         </button>
       </section>
-      <section className="detail-content section-pad">
-        <article className="rich-content" dangerouslySetInnerHTML={{ __html: property.bodyHtml }} />
-      </section>
-      {gallery.length > 1 ? (
+      {gallery.length ? (
         <section className="gallery-section section-pad">
           <div className="section-heading-row">
             <div><span className="eyebrow">{t.gallery}</span><h2>{property.title}</h2></div>
           </div>
-          <div className="property-gallery">
+          <div className={`property-gallery${gallery.length === 1 ? " property-gallery--single" : ""}`}>
             {gallery.map((image, index) => (
               <button key={`${image}-${index}`} type="button" onClick={() => setGalleryIndex(index)}>
-                <img src={image} alt={`${property.title} — ${index + 1}`} loading="lazy" />
+                <img
+                  src={image}
+                  alt={`${property.title} — ${index + 1}`}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  decoding="async"
+                />
               </button>
             ))}
           </div>
         </section>
       ) : null}
+      <section className="detail-content section-pad">
+        <article className="rich-content" dangerouslySetInnerHTML={{ __html: property.bodyHtml }} />
+      </section>
       {relatedProperties.length ? (
         <section className="related-section section-pad">
           <div className="section-heading-row">
             <div><span className="eyebrow">Agency Luxury Self</span><h2>{sourcePageCopy[locale].similarProperties}</h2></div>
           </div>
           <div className="property-grid property-related-grid">
-            {relatedProperties.map((item) => <PropertyCard key={item.id} locale={locale} property={item} />)}
+            {relatedProperties.map((item) => <PropertyCard key={item.id} locale={locale} property={item} priority />)}
           </div>
         </section>
       ) : null}

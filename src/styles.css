@@ -1266,6 +1266,16 @@ h2 {
   gap: 10px;
 }
 
+.property-gallery.property-gallery--single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1280px;
+  margin-inline: auto;
+}
+
+.property-gallery.property-gallery--single button {
+  aspect-ratio: 16 / 9;
+}
+
 .property-gallery button {
   position: relative;
   aspect-ratio: 1.25 / 1;
@@ -2838,6 +2848,10 @@ h2 {
 
   .property-gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .property-gallery.property-gallery--single button {
+    aspect-ratio: 4 / 3;
   }
 
   .lightbox {

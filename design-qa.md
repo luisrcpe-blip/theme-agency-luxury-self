@@ -84,4 +84,21 @@ Post-fix browser QA confirmed one active slide out of three, working next-arrow 
 - P1: none remaining.
 - P2: none remaining in the requested home and property-image surface.
 
+## Property-detail gallery visibility and image-priority pass
+
+- Live source truth: `https://agencyluxuryself.com/portfolio/la-paloma-manilva/`.
+- Source-vs-implementation comparison: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-fix\compare-source-vs-gallery-fix.jpg`.
+- Corrected desktop detail: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-fix\03-property-detail-after.jpg`.
+- Responsive evidence: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\property-gallery-fix\05-property-detail-mobile-after.jpg`.
+
+The audit found that the first four source listings publish one original photograph each and no gallery nodes. Their local files were valid, but the implementation hid the entire gallery whenever the assembled image array had length one. The correction renders every available original gallery immediately after the summary, uses a wide single-image layout when needed, and keeps the description below the media. It does not invent, generate, or substitute photographs.
+
+Visible card media now loads eagerly for the first four listing results and for related-property cards. In full galleries, the first four images are prioritized while later photographs remain lazy. La Paloma now exposes one decoded 1600 x 1068 gallery image and three decoded related-card covers; Villa KOA still exposes all 46 available images, with its first four decoded eagerly and zero broken images. The single-image lightbox opens and closes correctly.
+
+Responsive browser checks passed at 1280 x 720 and an emulated 390 x 844 viewport. The gallery becomes one column with a 4:3 mobile crop, the enquiry CTA remains within its container, and neither viewport has horizontal overflow. Browser consoles reported zero errors. Repository-wide asset verification covered 250 unique property-image references with zero missing or undecodable files. Production build and link validation passed.
+
+- P0: none.
+- P1: none remaining in property image visibility.
+- P2: the live source currently provides no additional original photos for the first four listings; adding more requires an authorized original-media source.
+
 final result: passed

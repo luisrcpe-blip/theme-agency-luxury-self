@@ -13,3 +13,5 @@ Property listing cards must prioritize legibility at card scale: use the readabl
 Text placed over photography must use a clear UX hierarchy and a restrained two-layer shadow for edge contrast. Keep shadows scoped to photographic covers and image captions; never add text shadows to copy on light cards or solid content panels.
 
 The home page must preserve the source order immediately after the cover: centered brand statement, then the three-slide services carousel using the original Real Estate, Property Management, and Interior Design photographs, followed by the journal. Do not replace this sequence with invented curated cards or substitute imagery.
+
+Property detail pages must place the available original gallery immediately after the summary. Never suppress the gallery when a listing has only one original photograph, and prioritize loading the property images visible in the first viewport or first card rows.
