@@ -63,4 +63,25 @@ Required fidelity surfaces: original covers and crops remain unchanged; transpar
 - P1: none remaining.
 - P2: none remaining in the requested typography and contrast surface.
 
+## Home source-order, service carousel, and property imagery pass
+
+- Source visual truth:
+  - `C:\Users\Edgar\AppData\Local\Temp\codex-clipboard-7de70c46-4d59-4ddd-aca0-c7dd2e2086bd.png` (brand statement directly below the home cover);
+  - `C:\Users\Edgar\AppData\Local\Temp\codex-clipboard-c75416fa-a653-47f1-a9cc-668513fe3d1a.png` (three-slide services carousel).
+- Same-region comparison boards, source on top and corrected implementation below:
+  - `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-home-source-sections\compare-home-statement.jpg`;
+  - `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-home-source-sections\compare-home-carousel.jpg`.
+- Browser-rendered implementation evidence:
+  - Spanish statement and carousel context at 1280 × 720: `implementation-home-statement-context.jpg` and `implementation-home-carousel-context.jpg` in the evidence directory above;
+  - German statement and complete stacked carousel at 390 × 844: `implementation-home-de-mobile-statement.jpg` and `implementation-home-de-mobile-carousel.jpg`;
+  - Spanish property listing with both first-row photographs visible: `implementation-properties-images.jpg`.
+
+The initial pass exposed a P1 structural mismatch on Inicio: the source statement and service carousel had been replaced by an unrelated three-card grid. The correction restores the source order immediately after the cover, preserves the exact localized brand statement, and rebuilds the three service slides with the original real-estate, property-management, and interior-design photographs. The carousel keeps the source dark-panel/image split, rounded frame, arrows, three indicators, localized CTA destinations, and a stacked image-first mobile layout.
+
+Post-fix browser QA confirmed one active slide out of three, working next-arrow and direct-indicator navigation, the expected localized title and destination after each interaction, no horizontal overflow at 1280 px or 390 px, and all three carousel images decoded successfully. Indicator controls preserve the 12 px source appearance while exposing 36 × 44 px hit areas, visible keyboard focus, and pointer cursors. The German mobile layout fits the longest tested copy without clipping. The property listing still renders 11 cards; after normal lazy-loading traversal, all 11 source photographs reported non-zero natural width, with zero missing or broken images. Home and properties browser consoles reported zero errors.
+
+- P0: none.
+- P1: none remaining.
+- P2: none remaining in the requested home and property-image surface.
+
 final result: passed

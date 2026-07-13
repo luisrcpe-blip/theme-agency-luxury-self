@@ -89,6 +89,119 @@ const PAGE_COVERS = {
   contact: "/assets/source/pages/contact-cover.jpg",
 };
 
+const HOME_SERVICE_MEDIA = [
+  { image: "/assets/source/home/home-real-estate.webp", page: "properties" },
+  { image: "/assets/source/home/home-property-management.webp", page: "services" },
+  { image: "/assets/source/home/home-interior-design.jpeg", page: "interiors" },
+];
+
+const homeSourceCopy = {
+  es: {
+    statementLines: [
+      "“Somos una marca integral de lujo y estilo de vida que acompaña a propietarios e",
+      "inversionistas internacionales en España, gestionando cada etapa de su residencia:",
+      "desde la adquisición estratégica del inmueble hasta su diseño, operación y cuidado",
+      "continuo.”",
+    ],
+    carouselLabel: "Servicios de Agency Luxury Self",
+    slides: [
+      {
+        title: "Bienes Raíces",
+        description: "Asesoramiento y búsqueda de viviendas prime y oportunidades de inversión, alineadas con el estilo de vida, la privacidad y el valor a largo plazo.",
+        cta: "Ver más",
+      },
+      {
+        title: "Gestión de Propiedades",
+        description: "Cuidado operativo integral: mantenimiento, proveedores, personal, preparación de la propiedad y tranquilidad del propietario durante todo el año.",
+        cta: "Ver más",
+      },
+      {
+        title: "Diseño de Interior",
+        description: "Transformaciones llave en mano que elevan el confort y la coherencia, desde el concepto hasta la instalación, con socios cuidadosamente seleccionados.",
+        cta: "Ver más",
+      },
+    ],
+  },
+  en: {
+    statementLines: [
+      "“We are a comprehensive luxury and lifestyle brand that supports international owners and",
+      "investors in Spain, managing every stage of their residence:",
+      "from strategic property acquisition to its design, operation, and ongoing",
+      "care.”",
+    ],
+    carouselLabel: "Agency Luxury Self services",
+    slides: [
+      {
+        title: "Real Estate",
+        description: "Advisory and search for prime properties and investment opportunities, aligned with lifestyle, privacy, and long-term value.",
+        cta: "View more",
+      },
+      {
+        title: "Property Management",
+        description: "Comprehensive operational care: maintenance, suppliers, staff, property preparation, and owner peace of mind year-round.",
+        cta: "View more",
+      },
+      {
+        title: "Interior Design",
+        description: "Turnkey transformations that elevate comfort and coherence, from concept to installation, with carefully selected partners.",
+        cta: "View more",
+      },
+    ],
+  },
+  de: {
+    statementLines: [
+      "„Wir sind eine ganzheitliche Luxus- und Lifestyle-Marke, die internationale Eigentümer und",
+      "Investoren in Spanien begleitet und jede Phase ihres Wohnsitzes betreut:",
+      "von der strategischen Immobilienakquise bis hin zu Design, Betrieb und kontinuierlicher",
+      "Betreuung.“",
+    ],
+    carouselLabel: "Leistungen von Agency Luxury Self",
+    slides: [
+      {
+        title: "Immobilien",
+        description: "Beratung und Suche nach erstklassigen Wohnimmobilien und Investitionsmöglichkeiten – abgestimmt auf Lifestyle, Privatsphäre und langfristigen Wert.",
+        cta: "Mehr anzeigen",
+      },
+      {
+        title: "Immobilienverwaltung",
+        description: "Umfassende operative Betreuung: Instandhaltung, Dienstleister, Personal, Vorbereitung der Immobilie und die Sicherheit des Eigentümers das ganze Jahr über.",
+        cta: "Mehr anzeigen",
+      },
+      {
+        title: "Interior Design",
+        description: "Schlüsselfertige Transformationen, die Komfort und stimmige Gestaltung auf ein neues Niveau heben – vom Konzept bis zur Installation, mit sorgfältig ausgewählten Partnern.",
+        cta: "Mehr anzeigen",
+      },
+    ],
+  },
+  fr: {
+    statementLines: [
+      "Nous sommes une marque intégrale de luxe et de style de vie qui accompagne les propriétaires et",
+      "investisseurs internationaux en Espagne, en gérant chaque étape de leur résidence :",
+      "de l’acquisition stratégique du bien immobilier jusqu’à sa conception, son exploitation et son entretien",
+      "continu.",
+    ],
+    carouselLabel: "Services d’Agency Luxury Self",
+    slides: [
+      {
+        title: "Immobilier",
+        description: "Conseil et recherche de résidences premium et d’opportunités d’investissement, alignées avec le style de vie, la confidentialité et la valeur à long terme.",
+        cta: "Voir plus",
+      },
+      {
+        title: "Gestion de Propriétés",
+        description: "Prise en charge opérationnelle complète : entretien, fournisseurs, personnel, préparation de la propriété et sérénité du propriétaire tout au long de l’année.",
+        cta: "Voir plus",
+      },
+      {
+        title: "Design d’Intérieur",
+        description: "Transformations clés en main qui rehaussent le confort et la cohérence, du concept à l’installation, avec des partenaires soigneusement sélectionnés.",
+        cta: "Voir plus",
+      },
+    ],
+  },
+};
+
 const LOCALE_FLAGS = {
   es: "/assets/source/brand/flags/es.svg",
   en: "/assets/source/brand/flags/en.svg",
@@ -623,10 +736,111 @@ function Metric({ icon: Icon, value, label }) {
   );
 }
 
-function HomePage({ locale, onInquiry }) {
+function HomeBrandStatement({ locale }) {
+  const lines = homeSourceCopy[locale].statementLines;
+  return (
+    <section className="home-brand-statement" aria-label="Agency Luxury Self">
+      <p>
+        {lines.map((line, index) => (
+          <span key={line}>
+            {line}
+            {index < lines.length - 1 ? (
+              <>
+                <br className="home-statement-break" />
+                <span className="home-statement-mobile-space" aria-hidden="true"> </span>
+              </>
+            ) : null}
+          </span>
+        ))}
+      </p>
+    </section>
+  );
+}
+
+function HomeServicesCarousel({ locale }) {
+  const labels = commerceLabels[locale];
+  const content = homeSourceCopy[locale];
+  const slides = content.slides.map((slide, index) => ({ ...HOME_SERVICE_MEDIA[index], ...slide }));
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [locale]);
+
+  const showPrevious = () => setActiveIndex((current) => (current - 1 + slides.length) % slides.length);
+  const showNext = () => setActiveIndex((current) => (current + 1) % slides.length);
+
+  return (
+    <section className="home-services-carousel" aria-label={content.carouselLabel}>
+      <div
+        className="home-services-frame"
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={content.carouselLabel}
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            showPrevious();
+          }
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            showNext();
+          }
+        }}
+      >
+        <div className="home-services-track" style={{ transform: `translate3d(-${activeIndex * 100}%, 0, 0)` }}>
+          {slides.map((slide, index) => (
+            <article
+              className="home-service-slide"
+              key={slide.title}
+              aria-hidden={index !== activeIndex}
+              aria-label={`${index + 1} / ${slides.length}: ${slide.title}`}
+            >
+              <div className="home-service-copy">
+                <div>
+                  <h2>{slide.title}</h2>
+                  <p>{slide.description}</p>
+                  <a
+                    className="home-service-link"
+                    href={hrefFor(locale, slide.page)}
+                    tabIndex={index === activeIndex ? 0 : -1}
+                  >
+                    {slide.cta}
+                  </a>
+                </div>
+              </div>
+              <div className="home-service-image">
+                <img src={slide.image} alt={slide.title} loading={index === 0 ? "eager" : "lazy"} />
+              </div>
+            </article>
+          ))}
+        </div>
+        <button className="home-services-arrow home-services-arrow--previous" type="button" onClick={showPrevious} aria-label={labels.previous}>
+          <CaretLeft size={28} weight="light" />
+        </button>
+        <button className="home-services-arrow home-services-arrow--next" type="button" onClick={showNext} aria-label={labels.next}>
+          <CaretRight size={28} weight="light" />
+        </button>
+        <div className="home-services-dots" aria-label={content.carouselLabel}>
+          {slides.map((slide, index) => (
+            <button
+              className={index === activeIndex ? "is-active" : ""}
+              type="button"
+              key={slide.title}
+              onClick={() => setActiveIndex(index)}
+              aria-label={`${index + 1}: ${slide.title}`}
+              aria-current={index === activeIndex ? "true" : undefined}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HomePage({ locale }) {
   const t = copy[locale];
-  const featured = propertyForRoute("villa-koa-sotogrande-costa", locale) || propertiesForLocale(locale)[0];
-  const featuredPrice = formatMoney(featured.price, featured.currency, locale);
   return (
     <main>
       <PageHero
@@ -636,64 +850,8 @@ function HomePage({ locale, onInquiry }) {
         title={t.heroTitle}
         lead={t.heroBody}
       />
-      <section className="curated-grid" aria-label={t.discover}>
-        <article className="curated-card">
-          <a className="card-image-wrap" href={hrefFor(locale, "properties", featured.slug)}>
-            <img src={featured.heroImage} alt={featured.title} />
-            <span className="image-label">{t.featuredProperty}</span>
-          </a>
-          <div className="curated-card-body">
-            <span className="eyebrow">{t.propertyCategory}</span>
-            <h2>{featured.title}</h2>
-            <div className="compact-metrics">
-              <Metric icon={Ruler} value={featured.areaM2 ? `${featured.areaM2} m²` : null} label="" />
-              <Metric icon={Bed} value={featured.bedrooms} label="" />
-              <Metric icon={Bathtub} value={featured.bathrooms} label="" />
-              <Metric icon={MapPin} value={featured.location} label="" />
-            </div>
-            <div className="card-footer-row">
-              <strong>{featuredPrice}</strong>
-              <a className="text-button" href={hrefFor(locale, "properties", featured.slug)}>
-                {t.viewProperty} <ArrowRight size={15} weight="light" />
-              </a>
-            </div>
-          </div>
-        </article>
-        <article className="curated-card">
-          <a className="card-image-wrap" href={hrefFor(locale, "atelier", atelierPreview.slug)}>
-            <img src={atelierPreview.image} alt={t.atelierSampleTitle} />
-            <span className="image-label">{t.atelierCategory}</span>
-          </a>
-          <div className="curated-card-body">
-            <span className="eyebrow">{t.nav.interiors}</span>
-            <h2>{t.atelierSampleTitle}</h2>
-            <p>{t.atelierSampleMeta}</p>
-            <div className="card-footer-row">
-              <strong>{t.atelierSamplePrice}</strong>
-              <a className="text-button" href={hrefFor(locale, "atelier", atelierPreview.slug)}>
-                {t.viewProduct} <ArrowRight size={15} weight="light" />
-              </a>
-            </div>
-          </div>
-        </article>
-        <article className="curated-card">
-          <a className="card-image-wrap" href={hrefFor(locale, "services")}>
-            <img src="/assets/images/property-key.webp" alt={t.managementTitle} />
-            <span className="image-label">{t.serviceCategory}</span>
-          </a>
-          <div className="curated-card-body">
-            <span className="eyebrow">{t.nav.services}</span>
-            <h2>{t.managementTitle}</h2>
-            <p>{t.managementMeta}</p>
-            <div className="card-footer-row align-end">
-              <button className="text-button" type="button" onClick={onInquiry}>
-                {t.moreInformation} <ArrowRight size={15} weight="light" />
-              </button>
-            </div>
-          </div>
-        </article>
-      </section>
-      <EditorialIntro locale={locale} />
+      <HomeBrandStatement locale={locale} />
+      <HomeServicesCarousel locale={locale} />
       <JournalPreview locale={locale} />
     </main>
   );
@@ -1514,7 +1672,7 @@ function routeLabel(locale, page) {
 
 function PageRenderer({ route, cart, context, onInquiry }) {
   const { locale, page } = route;
-  if (page === "home") return <HomePage locale={locale} onInquiry={() => onInquiry({ kind: "general", cta: "home-management-card" })} />;
+  if (page === "home") return <HomePage locale={locale} />;
   if (page === "properties") return <PropertiesPage locale={locale} />;
   if (page === "property") return <PropertyPage locale={locale} slug={route.slug} onInquiry={onInquiry} />;
   if (page === "atelier") return <AtelierPage locale={locale} />;

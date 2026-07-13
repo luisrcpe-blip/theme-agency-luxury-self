@@ -433,6 +433,10 @@ h2 {
   background: linear-gradient(180deg, rgba(16, 15, 12, 0.36), rgba(16, 15, 12, 0.52) 45%, rgba(16, 15, 12, 0.62));
 }
 
+.page-hero--home {
+  min-height: 750px;
+}
+
 .page-hero--home .page-hero-content {
   transform: translateY(70px);
 }
@@ -505,6 +509,217 @@ h2 {
   display: inline-block;
   color: var(--brass);
   line-height: 1.3;
+}
+
+.home-brand-statement {
+  padding: 110px var(--page-pad);
+  background: #fff;
+}
+
+.home-brand-statement p {
+  max-width: 1180px;
+  margin: 0 auto;
+  color: #3a2e26;
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.home-statement-mobile-space {
+  display: none;
+}
+
+.home-services-carousel {
+  padding: 0 20px;
+  background: #fff;
+}
+
+.home-services-frame {
+  position: relative;
+  width: min(100%, 1700px);
+  height: clamp(540px, 45vw, 680px);
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #4b4138;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.home-services-frame:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 4px;
+}
+
+.home-services-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.home-service-slide {
+  display: grid;
+  flex: 0 0 100%;
+  min-width: 0;
+  height: 100%;
+  grid-template-columns: 64% 36%;
+}
+
+.home-service-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  padding: 72px clamp(92px, 8vw, 156px);
+  background: rgba(70, 60, 50, 0.97);
+  color: #fff;
+}
+
+.home-service-copy > div {
+  width: min(100%, 700px);
+}
+
+.home-service-copy h2 {
+  margin: 0 0 22px;
+  color: inherit;
+  font-family: var(--sans);
+  font-size: clamp(2.25rem, 2.35vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.home-service-copy p {
+  max-width: 650px;
+  margin: 0 0 34px;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.8;
+}
+
+.home-service-link {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 34px;
+  border: 2px solid rgba(255, 255, 255, 0.94);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.home-service-link:hover,
+.home-service-link:focus-visible {
+  background: #fff;
+  color: #4b4138;
+}
+
+.home-service-image {
+  min-width: 0;
+  overflow: hidden;
+  background: #d8d0c6;
+}
+
+.home-service-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-services-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  cursor: pointer;
+  place-items: center;
+  transform: translateY(-50%);
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.home-services-arrow:hover,
+.home-services-arrow:focus-visible {
+  background: rgba(255, 255, 255, 0.42);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.home-services-arrow--previous {
+  left: 18px;
+}
+
+.home-services-arrow--next {
+  right: calc(36% + 18px);
+}
+
+.home-services-dots {
+  position: absolute;
+  bottom: 34px;
+  left: 32%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  transform: translateX(-50%);
+}
+
+.home-services-dots button {
+  position: relative;
+  display: grid;
+  width: 36px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  place-items: center;
+}
+
+.home-services-dots button::before {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.46);
+  content: "";
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.home-services-dots button:hover::before,
+.home-services-dots button:focus-visible::before {
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.home-services-dots button:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: -7px;
+}
+
+.home-services-dots button.is-active::before {
+  background: #fff;
+  transform: scale(1.2);
+}
+
+.home-services-carousel + .journal-preview {
+  padding-top: clamp(60px, 6vw, 90px);
+  border-top: 0;
 }
 
 
@@ -2229,6 +2444,53 @@ h2 {
     width: min(220px, 100%);
   }
 
+  .home-brand-statement {
+    padding-block: 86px;
+  }
+
+  .home-services-carousel {
+    padding-inline: 22px;
+  }
+
+  .home-services-frame {
+    height: 760px;
+  }
+
+  .home-service-slide {
+    grid-template-columns: 1fr;
+    grid-template-rows: 270px minmax(0, 1fr);
+  }
+
+  .home-service-image {
+    grid-row: 1;
+  }
+
+  .home-service-copy {
+    grid-row: 2;
+    padding: 52px clamp(70px, 12vw, 110px) 88px;
+  }
+
+  .home-service-copy > div {
+    width: min(100%, 620px);
+  }
+
+  .home-services-arrow {
+    top: 135px;
+  }
+
+  .home-services-arrow--previous {
+    left: 18px;
+  }
+
+  .home-services-arrow--next {
+    right: 18px;
+  }
+
+  .home-services-dots {
+    bottom: 26px;
+    left: 50%;
+  }
+
   .curated-grid,
   .product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2376,6 +2638,75 @@ h2 {
 
   .page-hero-content::after {
     margin-top: 46px;
+  }
+
+  .home-brand-statement {
+    padding: 72px 24px;
+  }
+
+  .home-brand-statement p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .home-statement-break {
+    display: none;
+  }
+
+  .home-statement-mobile-space {
+    display: inline;
+  }
+
+  .home-services-carousel {
+    padding-inline: 14px;
+  }
+
+  .home-services-frame {
+    height: 690px;
+    border-radius: 14px;
+  }
+
+  .home-service-slide {
+    grid-template-rows: 235px minmax(0, 1fr);
+  }
+
+  .home-service-copy {
+    padding: 44px 38px 82px;
+  }
+
+  .home-service-copy h2 {
+    margin-bottom: 18px;
+    font-size: clamp(1.85rem, 9vw, 2.3rem);
+    line-height: 1.16;
+  }
+
+  .home-service-copy p {
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  .home-service-link {
+    min-height: 46px;
+    padding-inline: 28px;
+  }
+
+  .home-services-arrow {
+    top: 117px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .home-services-arrow--previous {
+    left: 12px;
+  }
+
+  .home-services-arrow--next {
+    right: 12px;
+  }
+
+  .home-services-dots {
+    bottom: 22px;
   }
 
   .curated-grid,
