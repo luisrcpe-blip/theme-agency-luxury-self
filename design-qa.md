@@ -41,4 +41,26 @@ Final QA covered transparent-to-solid header behavior, menu focus and Escape beh
 - P1: none remaining.
 - P2: none remaining in the requested fidelity surface.
 
+## UX typography and photographic-text contrast pass
+
+- Browser-rendered baseline: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\contact-before-582x796.png`.
+- Corrected implementation: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\contact-after-582x796.png`.
+- Same-state comparison board: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\contact-typography-before-after.png` (baseline left, corrected implementation right).
+- Comparison viewport: 582 × 796, same contact route, language, scroll position, cover image, and browser state.
+- Additional corrected surfaces:
+  - properties cover at 1280 × 720: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\properties-hero-desktop-1280x720.png`;
+  - property detail and summary at 1280 × 720: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\property-detail-desktop-1280x720.png`;
+  - contact image caption at 390 × 844: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\contact-visual-mobile-390x844.png`;
+  - journal sidebar form at 1280 × 720: `C:\Users\Edgar\.codex\visualizations\2026\07\13\019f5a26-633e-73f2-a50b-14d2f3acf8c4\agency-ux-typography-shadow\blog-sidebar-desktop-1280x720.png`.
+
+The baseline exposed a P1 readability issue: photographic covers relied on thin type, a weak scrim, and no edge contrast, so the title and supporting copy lost definition over light foliage and architecture. The correction establishes a clear eyebrow/title/body hierarchy, adds restrained two-layer shadows only to text placed over photography, and strengthens the cover gradients. Light cards and solid content panels deliberately remain shadow-free.
+
+Post-fix measurements on the contact cover confirmed title 49.6 px/500, lead 15.2 px/500, and eyebrow 12 px/700. The properties cover measured 58.88 px/500 for the title, while property-detail titles use a balanced 28ch desktop measure and an 18ch mobile limit. A 111-character mobile property title was verified at 390 px wide without clipping or horizontal overflow. The journal form now uses readable 11.2 px/700 field labels, 11.84 px/500 privacy copy, and 16 px mobile inputs to avoid browser zoom.
+
+Required fidelity surfaces: original covers and crops remain unchanged; transparent-to-solid header behavior remains intact; title hierarchy is stronger without changing localized copy; shadows are scoped to photography; overlays preserve image detail; responsive headings fit desktop, portrait mobile, and long translated titles; property prices and metrics remain clean on light panels. Broken-image checks found none, horizontal-overflow checks passed, and the browser console reported no errors.
+
+- P0: none.
+- P1: none remaining.
+- P2: none remaining in the requested typography and contrast surface.
+
 final result: passed
