@@ -119,3 +119,14 @@ final result: passed
 The property-detail source order is now hero cover, horizontal thumbnail carousel, summary, and long-form content. The carousel scrolls by touch/trackpad or previous/next controls and progressively loads the complete original gallery. Its arrow states follow real overflow and scroll position, including viewport changes. Clicking a thumbnail opens an accessible modal with focus trapping, Escape and arrow-key navigation, an image counter, localized controls, and body-scroll locking. Zoom supports 100–400% controls, keyboard shortcuts, mouse-wheel input, double-click toggle, and constrained pointer/touch panning while enlarged; changing images resets the view before the next photograph renders, and resize/rotation reclamps the pan bounds.
 
 La Paloma still resolves to 59 recovered gallery photographs plus its distinct ALS cover (60 unique images total), and all 59 gallery asset paths exist locally. The live Vite page and transformed application module returned HTTP 200 with the new carousel and zoom viewer code. The full immutable release check passed: 136 routes, 512 integrity-tracked files, 1,112 references, all published assets, redirects, sitemap URLs, and the Nuklo Core contract.
+
+## Exact Penthouse Sotogrande A213 gallery recovery
+
+- ALS source: `https://agencyluxuryself.com/portfolio/la-paloma-manilva-copy-2772/` (WordPress post `221646`).
+- Historical listing match: `https://luxurysotogrande.com/property/stunning-penthouse-with-views/` (reference `LS0427`, historical asking price €1,650,000).
+- Exact gallery source: `https://www.openfrontiers.com/properties/sotogrande-puerto-deportivo/penthouse/A213` (reference `A213`, 23 photographs).
+- Independent syndicated corroboration: `https://www.propertytop.com/forsale/sotogrande-puerto-deportivo/penthouses/642-A213`.
+
+The ALS page exposes only its cover and no `.als-gallery` nodes. A213 is an exact identity match through its 4 bedrooms, 3 bathrooms plus guest toilet, 480 m² built area, south-west orientation, marina/Mediterranean/Gibraltar views, fireplace, marble floors, two parking spaces, security service, and matching cover photograph. The source listing later changed its asking price, but the stable references, specifications and media prove it is the same property; LS0427 preserves the historical €1,650,000 evidence.
+
+ALS retains its existing cover. Source image 1 was excluded because it is that cover: after normalization, the re-encoded files differ by only 2.533 grayscale levels on average. Source images 2–23 were optimized locally and added as the fallback gallery, producing 23 total images. All 23 decode correctly, have unique paths and SHA-256 hashes, and are at least 1600 × 900. Provenance and the deterministic local paths are recorded in `content/property-gallery-overrides.json`; if ALS later publishes its own gallery, the importer will prefer the live source automatically.
