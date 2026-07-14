@@ -130,3 +130,28 @@ La Paloma still resolves to 59 recovered gallery photographs plus its distinct A
 The ALS page exposes only its cover and no `.als-gallery` nodes. A213 is an exact identity match through its 4 bedrooms, 3 bathrooms plus guest toilet, 480 m² built area, south-west orientation, marina/Mediterranean/Gibraltar views, fireplace, marble floors, two parking spaces, security service, and matching cover photograph. The source listing later changed its asking price, but the stable references, specifications and media prove it is the same property; LS0427 preserves the historical €1,650,000 evidence.
 
 ALS retains its existing cover. Source image 1 was excluded because it is that cover: after normalization, the re-encoded files differ by only 2.533 grayscale levels on average. Source images 2–23 were optimized locally and added as the fallback gallery, producing 23 total images. All 23 decode correctly, have unique paths and SHA-256 hashes, and are at least 1600 × 900. Provenance and the deterministic local paths are recorded in `content/property-gallery-overrides.json`; if ALS later publishes its own gallery, the importer will prefer the live source automatically.
+
+## Complete 11-property media audit and Ribera recoveries
+
+The full portfolio was audited property by property. Before this pass, every route and existing image worked, but Ribera del Paraíso and Ribera del Marlin still exposed only one cover each. Exact syndicated listings were recovered instead of borrowing unrelated media:
+
+- Ribera del Paraíso: Open Frontiers reference `A181`, 9 source photographs. The ALS cover matches source photo 9 (2.383 mean grayscale levels after normalization), so source photos 1–8 were retained in source order and photo 9 was excluded as the duplicate cover. PropertyTop corroborates the historical €519,000 price and matching 3-bedroom, 2-bathroom, 185 m² specification.
+- Ribera del Marlin: Open Frontiers reference `A525`, 21 source photographs. The ALS cover matches source photo 15 (2.271 mean grayscale levels after normalization), so the other 20 photographs were retained in source order and photo 15 was excluded as the duplicate cover. JamesEdition A525 and Luxury Sotogrande LS0431 independently corroborate the €720,000 price, 2 bedrooms, 2 bathrooms plus guest toilet, and 114 m² interior + 50 m² terrace = 164 m² built specification.
+
+Final portfolio inventory:
+
+| Property | Cover | Gallery | Total |
+| --- | ---: | ---: | ---: |
+| La Paloma | 1 | 59 | 60 |
+| Penthouse Sotogrande | 1 | 22 | 23 |
+| Ribera del Paraíso | 1 | 8 | 9 |
+| Ribera del Marlin | 1 | 20 | 21 |
+| Villa KOA | 1 | 45 | 46 |
+| Zona C | 1 | 43 | 44 |
+| Villa Ebony | 1 | 48 | 49 |
+| Villa de Golf | 1 | 32 | 33 |
+| Zona B | 1 | 40 | 41 |
+| Zona G | 1 | 21 | 22 |
+| Villa Verde | 1 | 10 | 11 |
+
+The portfolio now contains 359 local property images. Final verification checks every declared path, decodes every file with Sharp, rejects duplicate paths and hashes within each property, requests all 359 media URLs over the local server, and requests all 44 localized property routes (11 properties × ES/EN/DE/FR).

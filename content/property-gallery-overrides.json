@@ -100,5 +100,55 @@
       "/assets/source/properties/la-paloma-manilva-copy-2772/gallery-21-49ded7e297a7.webp",
       "/assets/source/properties/la-paloma-manilva-copy-2772/gallery-22-4ae94de9cad7.webp"
     ]
+  },
+  "ribera-del-paraiso": {
+    "reference": "A181",
+    "sourceUrl": "https://www.openfrontiers.com/properties/ribera-del-paraiso/apartment/A181",
+    "corroboratingUrl": "https://www.propertytop.com/forsale/ribera-del-paraiso/apartments",
+    "sourceImageCount": 9,
+    "heroSourcePosition": 9,
+    "verification": "The ALS cover is the same photograph as source image 9. The listing reference, description, specifications and historical asking price match, and the remaining 8 distinct source photographs are retained below in source order.",
+    "gallery": [
+      "/assets/source/properties/ribera-del-paraiso/gallery-01-2d8d08d8cdd1.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-02-e23f63ad7caa.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-03-6f07513a346c.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-04-81594e52754c.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-05-c14415d5449e.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-06-b3c4478aa38a.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-07-999ada8105e7.webp",
+      "/assets/source/properties/ribera-del-paraiso/gallery-08-a214c07a8bf5.webp"
+    ]
+  },
+  "ribera-del-marlin-sotogrande-marina": {
+    "reference": "A525",
+    "sourceUrl": "https://www.openfrontiers.com/properties/ribera-del-marlin/penthouse/A525",
+    "corroboratingUrl": "https://www.jamesedition.com/real_estate/sotogrande-spain/elegant-penthouse-in-ribera-del-marlin-sotogrande-marina-15442098",
+    "historicalSourceUrl": "https://luxurysotogrande.com/property/penthouse-with-views/",
+    "historicalReference": "LS0431",
+    "sourceImageCount": 21,
+    "heroSourcePosition": 15,
+    "verification": "The ALS cover is the same photograph as source image 15. Reference A525, description, specifications and historical asking price match across the primary and corroborating listings, and the remaining 20 distinct source photographs are retained below in source order.",
+    "gallery": [
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-01-7b5c8cd5fdeb.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-02-6156be41cce5.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-03-faf43260e252.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-04-03fa00088a28.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-05-90132391f283.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-06-4ef6ead0fc8c.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-07-0c9dd38108ad.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-08-a9f4dcec5319.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-09-094ae0eecf6a.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-10-210151a0a007.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-11-87f67924b841.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-12-9417f826232b.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-13-f79be1da5cc3.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-14-17c6445656d4.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-15-e5d3f55b5e88.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-16-ad42d16b4032.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-17-ecb103ffa0a7.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-18-978b8fba68fb.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-19-a57b52ea269d.webp",
+      "/assets/source/properties/ribera-del-marlin-sotogrande-marina/gallery-20-663831ab4c1a.webp"
+    ]
   }
 }
