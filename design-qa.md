@@ -95,7 +95,7 @@ The initial audit found that the first four WordPress listings publish one attac
 
 Visible card media loads eagerly for the first four listing results and for related-property cards. In full galleries, the first four images are prioritized while later photographs remain lazy. La Paloma now exposes 60 unique photographs: the existing ALS cover plus 59 recovered V214 originals, with the matching source image 10 excluded to prevent duplication. All 60 local files decode correctly, the lightbox advances between images, and the complete source set remains traceable through `content/property-gallery-overrides.json`. Villa KOA still exposes all 46 available images.
 
-Responsive browser checks passed at the default desktop viewport and an emulated 390 x 844 viewport. La Paloma renders four gallery columns on desktop and two on mobile, with no horizontal overflow; all 60 images load progressively with zero broken files. The enquiry CTA remains within its container. Production build and link validation passed.
+The requested gallery redesign now keeps the full-bleed hero intact and places the media strip directly beneath it, before the property summary. The former four/two-column grid has been removed in favor of a single non-wrapping horizontal track at every breakpoint. Desktop and mobile rules retain dedicated carousel controls, touch scrolling, compact thumbnails, and no multi-row fallback. All 60 La Paloma image files remain present with zero missing local assets. Production build and link validation passed.
 
 ## Exact La Paloma V214 gallery recovery
 
@@ -113,3 +113,9 @@ Responsive browser checks passed at the default desktop viewport and an emulated
 - P2: the live source currently provides no additional original photos for the first four listings; adding more requires an authorized original-media source.
 
 final result: passed
+
+## Cover-adjacent property carousel and zoom viewer
+
+The property-detail source order is now hero cover, horizontal thumbnail carousel, summary, and long-form content. The carousel scrolls by touch/trackpad or previous/next controls and progressively loads the complete original gallery. Its arrow states follow real overflow and scroll position, including viewport changes. Clicking a thumbnail opens an accessible modal with focus trapping, Escape and arrow-key navigation, an image counter, localized controls, and body-scroll locking. Zoom supports 100–400% controls, keyboard shortcuts, mouse-wheel input, double-click toggle, and constrained pointer/touch panning while enlarged; changing images resets the view before the next photograph renders, and resize/rotation reclamps the pan bounds.
+
+La Paloma still resolves to 59 recovered gallery photographs plus its distinct ALS cover (60 unique images total), and all 59 gallery asset paths exist locally. The live Vite page and transformed application module returned HTTP 200 with the new carousel and zoom viewer code. The full immutable release check passed: 136 routes, 512 integrity-tracked files, 1,112 references, all published assets, redirects, sitemap URLs, and the Nuklo Core contract.

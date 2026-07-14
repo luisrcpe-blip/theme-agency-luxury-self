@@ -72,10 +72,10 @@ const atelierPreviewCopy = {
 };
 
 const commerceLabels = {
-  es: { variant: "Variante", soldOut: "Agotado", decrease: "Reducir cantidad", increase: "Aumentar cantidad", orderNumber: "Pedido", orderTotal: "Total", orderStatus: "Estado", previous: "Anterior", next: "Siguiente", heroAlt: "Etiqueta textil de Agency Luxury Self", checkoutError: "No pudimos completar el pedido. Revise los datos e inténtelo de nuevo.", orderRecorded: "Su pedido quedó registrado correctamente." },
-  en: { variant: "Variant", soldOut: "Sold out", decrease: "Decrease quantity", increase: "Increase quantity", orderNumber: "Order", orderTotal: "Total", orderStatus: "Status", previous: "Previous", next: "Next", heroAlt: "Agency Luxury Self textile label", checkoutError: "We could not complete the order. Check the details and try again.", orderRecorded: "Your order was recorded successfully." },
-  de: { variant: "Variante", soldOut: "Ausverkauft", decrease: "Menge verringern", increase: "Menge erhöhen", orderNumber: "Bestellung", orderTotal: "Gesamt", orderStatus: "Status", previous: "Zurück", next: "Weiter", heroAlt: "Textiletikett von Agency Luxury Self", checkoutError: "Die Bestellung konnte nicht abgeschlossen werden. Prüfen Sie die Angaben und versuchen Sie es erneut.", orderRecorded: "Ihre Bestellung wurde erfolgreich erfasst." },
-  fr: { variant: "Variante", soldOut: "Épuisé", decrease: "Réduire la quantité", increase: "Augmenter la quantité", orderNumber: "Commande", orderTotal: "Total", orderStatus: "Statut", previous: "Précédent", next: "Suivant", heroAlt: "Étiquette textile Agency Luxury Self", checkoutError: "La commande n’a pas pu être finalisée. Vérifiez les informations et réessayez.", orderRecorded: "Votre commande a bien été enregistrée." },
+  es: { variant: "Variante", soldOut: "Agotado", decrease: "Reducir cantidad", increase: "Aumentar cantidad", orderNumber: "Pedido", orderTotal: "Total", orderStatus: "Estado", previous: "Anterior", next: "Siguiente", openImage: "Abrir imagen", zoomIn: "Acercar", zoomOut: "Alejar", resetZoom: "Restablecer zoom", heroAlt: "Etiqueta textil de Agency Luxury Self", checkoutError: "No pudimos completar el pedido. Revise los datos e inténtelo de nuevo.", orderRecorded: "Su pedido quedó registrado correctamente." },
+  en: { variant: "Variant", soldOut: "Sold out", decrease: "Decrease quantity", increase: "Increase quantity", orderNumber: "Order", orderTotal: "Total", orderStatus: "Status", previous: "Previous", next: "Next", openImage: "Open image", zoomIn: "Zoom in", zoomOut: "Zoom out", resetZoom: "Reset zoom", heroAlt: "Agency Luxury Self textile label", checkoutError: "We could not complete the order. Check the details and try again.", orderRecorded: "Your order was recorded successfully." },
+  de: { variant: "Variante", soldOut: "Ausverkauft", decrease: "Menge verringern", increase: "Menge erhöhen", orderNumber: "Bestellung", orderTotal: "Gesamt", orderStatus: "Status", previous: "Zurück", next: "Weiter", openImage: "Bild öffnen", zoomIn: "Vergrößern", zoomOut: "Verkleinern", resetZoom: "Zoom zurücksetzen", heroAlt: "Textiletikett von Agency Luxury Self", checkoutError: "Die Bestellung konnte nicht abgeschlossen werden. Prüfen Sie die Angaben und versuchen Sie es erneut.", orderRecorded: "Ihre Bestellung wurde erfolgreich erfasst." },
+  fr: { variant: "Variante", soldOut: "Épuisé", decrease: "Réduire la quantité", increase: "Augmenter la quantité", orderNumber: "Commande", orderTotal: "Total", orderStatus: "Statut", previous: "Précédent", next: "Suivant", openImage: "Ouvrir l’image", zoomIn: "Agrandir", zoomOut: "Réduire", resetZoom: "Réinitialiser le zoom", heroAlt: "Étiquette textile Agency Luxury Self", checkoutError: "La commande n’a pas pu être finalisée. Vérifiez les informations et réessayez.", orderRecorded: "Votre commande a bien été enregistrée." },
 };
 
 const PAGE_COVERS = {
@@ -1031,10 +1031,183 @@ function PropertyPage({ locale, slug, onInquiry }) {
   const t = copy[locale];
   const labels = commerceLabels[locale];
   const property = propertyForRoute(slug, locale);
+  const gallery = property ? [property.heroImage, ...(property.gallery || [])] : [];
   const [galleryIndex, setGalleryIndex] = useState(null);
-  const lightboxRef = useDialogA11y(galleryIndex !== null, () => setGalleryIndex(null));
+  const [galleryZoom, setGalleryZoom] = useState(1);
+  const [galleryPan, setGalleryPan] = useState({ x: 0, y: 0 });
+  const [galleryDragging, setGalleryDragging] = useState(false);
+  const [galleryScrollState, setGalleryScrollState] = useState({ previous: false, next: false });
+  const galleryTrackRef = useRef(null);
+  const lightboxStageRef = useRef(null);
+  const lightboxImageRef = useRef(null);
+  const galleryDragRef = useRef(null);
+
+  function resetGalleryView() {
+    setGalleryZoom(1);
+    setGalleryPan((current) => (current.x || current.y ? { x: 0, y: 0 } : current));
+    galleryDragRef.current = null;
+    setGalleryDragging(false);
+  }
+
+  function closeGallery() {
+    resetGalleryView();
+    setGalleryIndex(null);
+  }
+
+  function openGallery(index) {
+    resetGalleryView();
+    setGalleryIndex(index);
+  }
+
+  function changeGalleryImage(delta) {
+    resetGalleryView();
+    setGalleryIndex((index) => (
+      index === null || !gallery.length
+        ? index
+        : (index + delta + gallery.length) % gallery.length
+    ));
+  }
+
+  function adjustGalleryZoom(delta) {
+    setGalleryZoom((value) => Math.min(4, Math.max(1, Math.round((value + delta) * 4) / 4)));
+  }
+
+  function clampGalleryPan(nextPan, zoom = galleryZoom) {
+    const stage = lightboxStageRef.current;
+    const image = lightboxImageRef.current;
+    if (!stage || !image || zoom <= 1) return { x: 0, y: 0 };
+    const maxX = Math.max(0, ((image.offsetWidth * zoom) - stage.clientWidth) / 2);
+    const maxY = Math.max(0, ((image.offsetHeight * zoom) - stage.clientHeight) / 2);
+    return {
+      x: Math.max(-maxX, Math.min(maxX, nextPan.x)),
+      y: Math.max(-maxY, Math.min(maxY, nextPan.y)),
+    };
+  }
+
+  function scrollGalleryTrack(direction) {
+    const track = galleryTrackRef.current;
+    if (!track) return;
+    track.scrollBy({
+      left: direction * Math.max(240, track.clientWidth * 0.78),
+      behavior: "smooth",
+    });
+  }
+
+  function updateGalleryTrackControls() {
+    const track = galleryTrackRef.current;
+    if (!track) return;
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const nextState = {
+      previous: track.scrollLeft > 1,
+      next: track.scrollLeft < maxScroll - 1,
+    };
+    setGalleryScrollState((current) => (
+      current.previous === nextState.previous && current.next === nextState.next
+        ? current
+        : nextState
+    ));
+  }
+
+  function handleGalleryPointerDown(event) {
+    if (galleryZoom <= 1 || event.button !== 0) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    galleryDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      panX: galleryPan.x,
+      panY: galleryPan.y,
+    };
+    setGalleryDragging(true);
+  }
+
+  function handleGalleryPointerMove(event) {
+    const origin = galleryDragRef.current;
+    if (!origin || origin.pointerId !== event.pointerId) return;
+    setGalleryPan(clampGalleryPan({
+      x: origin.panX + event.clientX - origin.startX,
+      y: origin.panY + event.clientY - origin.startY,
+    }));
+  }
+
+  function handleGalleryPointerEnd(event) {
+    if (galleryDragRef.current?.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    galleryDragRef.current = null;
+    setGalleryDragging(false);
+  }
+
+  function handleGalleryWheel(event) {
+    if (!event.deltaY) return;
+    event.stopPropagation();
+    adjustGalleryZoom(event.deltaY < 0 ? 0.25 : -0.25);
+  }
+
+  const lightboxRef = useDialogA11y(galleryIndex !== null, closeGallery);
+
+  useEffect(() => {
+    const track = galleryTrackRef.current;
+    if (!track) return undefined;
+    updateGalleryTrackControls();
+    track.addEventListener("scroll", updateGalleryTrackControls, { passive: true });
+    window.addEventListener("resize", updateGalleryTrackControls);
+    const resizeObserver = typeof window.ResizeObserver === "function"
+      ? new window.ResizeObserver(updateGalleryTrackControls)
+      : null;
+    resizeObserver?.observe(track);
+    return () => {
+      track.removeEventListener("scroll", updateGalleryTrackControls);
+      window.removeEventListener("resize", updateGalleryTrackControls);
+      resizeObserver?.disconnect();
+    };
+  }, [gallery.length, property?.id]);
+
+  useEffect(() => {
+    function reclampGalleryPan() {
+      setGalleryPan((current) => {
+        const next = clampGalleryPan(current, galleryZoom);
+        return next.x === current.x && next.y === current.y ? current : next;
+      });
+    }
+
+    reclampGalleryPan();
+    if (galleryIndex === null || !lightboxStageRef.current) return undefined;
+    window.addEventListener("resize", reclampGalleryPan);
+    const resizeObserver = typeof window.ResizeObserver === "function"
+      ? new window.ResizeObserver(reclampGalleryPan)
+      : null;
+    resizeObserver?.observe(lightboxStageRef.current);
+    return () => {
+      window.removeEventListener("resize", reclampGalleryPan);
+      resizeObserver?.disconnect();
+    };
+  }, [galleryZoom, galleryIndex]);
+
+  useEffect(() => {
+    if (galleryIndex === null) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event) {
+      if (event.key === "ArrowLeft") changeGalleryImage(-1);
+      else if (event.key === "ArrowRight") changeGalleryImage(1);
+      else if (event.key === "+" || event.key === "=") adjustGalleryZoom(0.25);
+      else if (event.key === "-") adjustGalleryZoom(-0.25);
+      else if (event.key === "0") setGalleryZoom(1);
+      else return;
+      event.preventDefault();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [galleryIndex, gallery.length]);
+
   if (!property) return <NotFound locale={locale} />;
-  const gallery = [property.heroImage, ...(property.gallery || [])];
   const relatedProperties = propertiesForLocale(locale).filter((item) => item.id !== property.id).slice(0, 3);
   return (
     <main>
@@ -1047,6 +1220,50 @@ function PropertyPage({ locale, slug, onInquiry }) {
           <p><MapPin size={17} weight="light" /> {property.location}</p>
         </div>
       </section>
+      {gallery.length ? (
+        <section className="property-media-strip section-pad" aria-label={t.gallery}>
+          <div className="property-thumbnail-shell">
+            <button
+              className="icon-button property-thumbnail-arrow"
+              type="button"
+              onClick={() => scrollGalleryTrack(-1)}
+              aria-label={`${labels.previous}: ${t.gallery}`}
+              disabled={!galleryScrollState.previous}
+            >
+              <CaretLeft size={23} weight="light" aria-hidden="true" />
+            </button>
+            <div ref={galleryTrackRef} className="property-thumbnail-track">
+              {gallery.map((image, index) => (
+                <button
+                  className="property-thumbnail"
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => openGallery(index)}
+                  aria-label={`${labels.openImage} ${index + 1} / ${gallery.length}`}
+                  aria-haspopup="dialog"
+                >
+                  <img
+                    src={image}
+                    alt=""
+                    loading={index < 8 ? "eager" : "lazy"}
+                    fetchPriority="auto"
+                    decoding="async"
+                  />
+                </button>
+              ))}
+            </div>
+            <button
+              className="icon-button property-thumbnail-arrow"
+              type="button"
+              onClick={() => scrollGalleryTrack(1)}
+              aria-label={`${labels.next}: ${t.gallery}`}
+              disabled={!galleryScrollState.next}
+            >
+              <CaretRight size={23} weight="light" aria-hidden="true" />
+            </button>
+          </div>
+        </section>
+      ) : null}
       <section className="property-summary section-pad">
         <div>
           <span className="eyebrow">{property.type}</span>
@@ -1068,26 +1285,6 @@ function PropertyPage({ locale, slug, onInquiry }) {
           {t.requestProperty}
         </button>
       </section>
-      {gallery.length ? (
-        <section className="gallery-section section-pad">
-          <div className="section-heading-row">
-            <div><span className="eyebrow">{t.gallery}</span><h2>{property.title}</h2></div>
-          </div>
-          <div className={`property-gallery${gallery.length === 1 ? " property-gallery--single" : ""}`}>
-            {gallery.map((image, index) => (
-              <button key={`${image}-${index}`} type="button" onClick={() => setGalleryIndex(index)}>
-                <img
-                  src={image}
-                  alt={`${property.title} — ${index + 1}`}
-                  loading={index < 4 ? "eager" : "lazy"}
-                  fetchPriority={index === 0 ? "high" : "auto"}
-                  decoding="async"
-                />
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
       <section className="detail-content section-pad">
         <article className="rich-content" dangerouslySetInnerHTML={{ __html: property.bodyHtml }} />
       </section>
@@ -1102,17 +1299,66 @@ function PropertyPage({ locale, slug, onInquiry }) {
         </section>
       ) : null}
       {galleryIndex !== null ? (
-        <div ref={lightboxRef} className="lightbox" role="dialog" aria-modal="true" aria-label={t.gallery}>
-          <button className="icon-button lightbox-close" type="button" onClick={() => setGalleryIndex(null)} aria-label={t.close}>
+        <div ref={lightboxRef} className="lightbox" role="dialog" aria-modal="true" aria-label={`${t.gallery}: ${property.title}`}>
+          <p className="lightbox-counter" aria-live="polite">{galleryIndex + 1} / {gallery.length}</p>
+          <button className="icon-button lightbox-close" type="button" onClick={closeGallery} aria-label={t.close} data-autofocus>
             <X size={28} weight="light" />
           </button>
-          <button className="icon-button lightbox-prev" type="button" onClick={() => setGalleryIndex((galleryIndex - 1 + gallery.length) % gallery.length)} aria-label={labels.previous}>
+          <button
+            className="icon-button lightbox-prev"
+            type="button"
+            onClick={() => changeGalleryImage(-1)}
+            aria-label={labels.previous}
+            aria-keyshortcuts="ArrowLeft"
+            disabled={gallery.length <= 1}
+          >
             <CaretLeft size={30} weight="light" />
           </button>
-          <img src={gallery[galleryIndex]} alt={`${property.title} — ${galleryIndex + 1}`} />
-          <button className="icon-button lightbox-next" type="button" onClick={() => setGalleryIndex((galleryIndex + 1) % gallery.length)} aria-label={labels.next}>
+          <div
+            ref={lightboxStageRef}
+            className={`lightbox-stage${galleryZoom > 1 ? " is-zoomed" : ""}${galleryDragging ? " is-dragging" : ""}`}
+            onPointerDown={handleGalleryPointerDown}
+            onPointerMove={handleGalleryPointerMove}
+            onPointerUp={handleGalleryPointerEnd}
+            onPointerCancel={handleGalleryPointerEnd}
+            onDoubleClick={() => setGalleryZoom((value) => (value > 1 ? 1 : 2))}
+            onWheel={handleGalleryWheel}
+          >
+            <img
+              ref={lightboxImageRef}
+              className="lightbox-image"
+              src={gallery[galleryIndex]}
+              alt={`${property.title} — ${galleryIndex + 1}`}
+              draggable="false"
+              onLoad={() => setGalleryPan((current) => clampGalleryPan(current, galleryZoom))}
+              style={{
+                "--gallery-zoom": galleryZoom,
+                "--gallery-pan-x": `${galleryPan.x}px`,
+                "--gallery-pan-y": `${galleryPan.y}px`,
+              }}
+            />
+          </div>
+          <button
+            className="icon-button lightbox-next"
+            type="button"
+            onClick={() => changeGalleryImage(1)}
+            aria-label={labels.next}
+            aria-keyshortcuts="ArrowRight"
+            disabled={gallery.length <= 1}
+          >
             <CaretRight size={30} weight="light" />
           </button>
+          <div className="lightbox-toolbar" role="toolbar" aria-label={t.gallery}>
+            <button className="icon-button" type="button" onClick={() => adjustGalleryZoom(-0.25)} aria-label={labels.zoomOut} disabled={galleryZoom <= 1}>
+              <Minus size={20} weight="light" aria-hidden="true" />
+            </button>
+            <button className="lightbox-zoom-value" type="button" onClick={() => setGalleryZoom(1)} aria-label={labels.resetZoom}>
+              {Math.round(galleryZoom * 100)}%
+            </button>
+            <button className="icon-button" type="button" onClick={() => adjustGalleryZoom(0.25)} aria-label={labels.zoomIn} disabled={galleryZoom >= 4}>
+              <Plus size={20} weight="light" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       ) : null}
     </main>
