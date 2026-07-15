@@ -38,7 +38,16 @@ import {
   resolveRoute,
   secondaryNavKeys,
 } from "./content.js";
+import {
+  buildEditablePageSeed,
+  contactPageContent,
+  servicePageContent as serviceContent,
+} from "./page-editorial-content.js";
 import { propertyMatchesType } from "./property-localization.js";
+import {
+  runtimeCustomizedPage,
+  specializedPageBodyMode,
+} from "./editorial-runtime.js";
 import {
   createOrder,
   formatMoney,
@@ -212,20 +221,32 @@ const LOCALE_FLAGS = {
 const HEADER_LOCALES = ["en", "es", "de", "fr"];
 const MENU_KEYS = ["about", "properties", "services", "interiors", "atelier", "blog", "contact"];
 
+function normalizeNavigationPath(value) {
+  const raw = String(value || "").split("?")[0].split("#")[0];
+  if (!raw) return "/";
+  const path = `/${raw.replace(/^\/+|\/+$/g, "")}/`.replace(/\/{2,}/g, "/");
+  return path === "//" ? "/" : path;
+}
+
+function unavailableEditorialPageRoutes() {
+  const editorial = getRuntimeContext()?.data?.editorial;
+  if (editorial?.schemaVersion !== 1 || !Array.isArray(editorial.unavailablePageRoutes)) {
+    return new Set();
+  }
+  return new Set(editorial.unavailablePageRoutes.map(normalizeNavigationPath));
+}
+
+function navigationHrefIsAvailable(href) {
+  return !unavailableEditorialPageRoutes().has(normalizeNavigationPath(href));
+}
+
+function pageNavigationIsAvailable(locale, page) {
+  return navigationHrefIsAvailable(hrefFor(locale, page));
+}
+
 const sourcePageCopy = {
   es: {
-    contactHeroEyebrow: "Atención personal y discreta",
-    contactHeroTitle: "Estamos aquí para escucharle.",
-    contactHeroLead: "Cuéntenos qué necesita y le acompañaremos con criterio, cercanía y absoluta confidencialidad.",
-    locationTitle: "Dónde estamos",
-    locationValue: "Sotogrande, Cádiz · Sur de España",
-    callUs: "Llámenos",
-    writeUs: "Escríbanos",
-    contactFormEyebrow: "Solicitud privada",
-    contactFormTitle: "Conversemos sobre lo que está buscando.",
-    contactFormLead: "Complete el formulario y el equipo de Agency Luxury Self se pondrá en contacto con usted.",
-    contactQuote: "Una buena decisión empieza por una conversación clara.",
-    areaLabel: "Nuestro área de servicio",
+    ...contactPageContent.es,
     categories: "Categorías",
     recentPosts: "Artículos recientes",
     journalContact: "Hablemos",
@@ -233,18 +254,7 @@ const sourcePageCopy = {
     similarProperties: "Propiedades similares",
   },
   en: {
-    contactHeroEyebrow: "Personal, discreet attention",
-    contactHeroTitle: "We are here to listen.",
-    contactHeroLead: "Tell us what you need and we will guide you with judgment, care and complete confidentiality.",
-    locationTitle: "Where to find us",
-    locationValue: "Sotogrande, Cádiz · Southern Spain",
-    callUs: "Call us",
-    writeUs: "Write to us",
-    contactFormEyebrow: "Private request",
-    contactFormTitle: "Let us talk about what you are looking for.",
-    contactFormLead: "Complete the form and the Agency Luxury Self team will contact you personally.",
-    contactQuote: "A good decision begins with a clear conversation.",
-    areaLabel: "Our service area",
+    ...contactPageContent.en,
     categories: "Categories",
     recentPosts: "Recent articles",
     journalContact: "Let us talk",
@@ -252,18 +262,7 @@ const sourcePageCopy = {
     similarProperties: "Similar properties",
   },
   de: {
-    contactHeroEyebrow: "Persönlich und diskret",
-    contactHeroTitle: "Wir nehmen uns Zeit für Sie.",
-    contactHeroLead: "Erzählen Sie uns, was Sie suchen. Wir begleiten Sie mit Erfahrung, Sorgfalt und absoluter Vertraulichkeit.",
-    locationTitle: "Wo Sie uns finden",
-    locationValue: "Sotogrande, Cádiz · Südspanien",
-    callUs: "Rufen Sie uns an",
-    writeUs: "Schreiben Sie uns",
-    contactFormEyebrow: "Private Anfrage",
-    contactFormTitle: "Sprechen wir über Ihre Vorstellungen.",
-    contactFormLead: "Füllen Sie das Formular aus und das Team von Agency Luxury Self meldet sich persönlich bei Ihnen.",
-    contactQuote: "Eine gute Entscheidung beginnt mit einem klaren Gespräch.",
-    areaLabel: "Unser Servicegebiet",
+    ...contactPageContent.de,
     categories: "Kategorien",
     recentPosts: "Neueste Artikel",
     journalContact: "Lassen Sie uns sprechen",
@@ -271,18 +270,7 @@ const sourcePageCopy = {
     similarProperties: "Ähnliche Immobilien",
   },
   fr: {
-    contactHeroEyebrow: "Une attention personnelle et discrète",
-    contactHeroTitle: "Nous sommes à votre écoute.",
-    contactHeroLead: "Parlez-nous de votre projet. Nous vous accompagnons avec discernement, attention et une totale confidentialité.",
-    locationTitle: "Où nous trouver",
-    locationValue: "Sotogrande, Cádiz · Sud de l’Espagne",
-    callUs: "Appelez-nous",
-    writeUs: "Écrivez-nous",
-    contactFormEyebrow: "Demande privée",
-    contactFormTitle: "Parlons de ce que vous recherchez.",
-    contactFormLead: "Complétez le formulaire et l’équipe Agency Luxury Self vous contactera personnellement.",
-    contactQuote: "Une bonne décision commence par une conversation claire.",
-    areaLabel: "Notre zone d’intervention",
+    ...contactPageContent.fr,
     categories: "Catégories",
     recentPosts: "Articles récents",
     journalContact: "Parlons-en",
@@ -470,19 +458,22 @@ function LocaleSwitcher({ locale, tone = "header" }) {
       </button>
       {open ? (
         <nav className="locale-menu" aria-label={t.languageSelector}>
-          {HEADER_LOCALES.map((item) => (
-            <a
-              key={item}
-              className={item === locale ? "active" : ""}
-              href={localizedHref(pathname, item)}
-              lang={item}
-              hrefLang={item}
-              aria-current={item === locale ? "page" : undefined}
-            >
-              <span className="flag-frame"><img src={LOCALE_FLAGS[item]} alt="" /></span>
-              <span>{copy[item].localeName}</span>
-            </a>
-          ))}
+          {HEADER_LOCALES.flatMap((item) => {
+            const href = localizedHref(pathname, item);
+            return navigationHrefIsAvailable(href) ? [(
+              <a
+                key={item}
+                className={item === locale ? "active" : ""}
+                href={href}
+                lang={item}
+                hrefLang={item}
+                aria-current={item === locale ? "page" : undefined}
+              >
+                <span className="flag-frame"><img src={LOCALE_FLAGS[item]} alt="" /></span>
+                <span>{copy[item].localeName}</span>
+              </a>
+            )] : [];
+          })}
         </nav>
       ) : null}
     </div>
@@ -531,7 +522,7 @@ function MobileMenu({ locale, open, onClose }) {
           </button>
         </div>
         <nav className="mobile-nav">
-          {MENU_KEYS.map((key) => (
+          {MENU_KEYS.filter((key) => pageNavigationIsAvailable(locale, key)).map((key) => (
             <a key={key} href={hrefFor(locale, key)} onClick={onClose}>
               {t.nav[key]}
             </a>
@@ -551,6 +542,7 @@ function SearchOverlay({ locale, open, onClose }) {
   const t = copy[locale];
   const [query, setQuery] = useState("");
   const dialogRef = useDialogA11y(open, onClose);
+  const unavailableRoutesSignature = [...unavailableEditorialPageRoutes()].sort().join("|");
   const results = useMemo(() => {
     const term = query.trim().toLocaleLowerCase(locale);
     if (!term) return [];
@@ -573,6 +565,7 @@ function SearchOverlay({ locale, open, onClose }) {
         href: hrefFor(locale, "blog", article.slug),
       }));
     const serviceResults = Object.entries(serviceContent)
+      .filter(([key]) => pageNavigationIsAvailable(locale, key))
       .filter(([key, content]) => `${t.nav[key] || ""} ${content.title[locale]} ${content.eyebrow[locale]} ${key === "services" ? `${t.managementTitle} ${t.managementMeta}` : ""}`.toLocaleLowerCase(locale).includes(term))
       .map(([key, content]) => ({
         key: `service-${key}`,
@@ -581,7 +574,7 @@ function SearchOverlay({ locale, open, onClose }) {
         href: hrefFor(locale, key),
       }));
     return [...propertyResults, ...serviceResults, ...articleResults].slice(0, 6);
-  }, [locale, query, t.blogTitle]);
+  }, [locale, query, t.blogTitle, unavailableRoutesSignature]);
   if (!open) return null;
   return (
     <div ref={dialogRef} className="search-overlay" role="dialog" aria-modal="true" aria-label={t.search}>
@@ -688,7 +681,9 @@ function InquiryForm({ locale, context = { kind: "general", cta: "contact" }, co
       <label className="privacy-checkbox">
         <input name="privacy" type="checkbox" required />
         <span>
-          <a href={hrefFor(locale, "privacy")}>{t.privacyConsent}</a>
+          {pageNavigationIsAvailable(locale, "privacy")
+            ? <a href={hrefFor(locale, "privacy")}>{t.privacyConsent}</a>
+            : t.privacyConsent}
         </span>
       </label>
       {status === "error" ? (
@@ -760,12 +755,16 @@ function HomeBrandStatement({ locale }) {
 function HomeServicesCarousel({ locale }) {
   const labels = commerceLabels[locale];
   const content = homeSourceCopy[locale];
-  const slides = content.slides.map((slide, index) => ({ ...HOME_SERVICE_MEDIA[index], ...slide }));
+  const slides = content.slides
+    .map((slide, index) => ({ ...HOME_SERVICE_MEDIA[index], ...slide }))
+    .filter((slide) => pageNavigationIsAvailable(locale, slide.page));
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [locale]);
+  }, [locale, slides.length]);
+
+  if (!slides.length) return null;
 
   const showPrevious = () => setActiveIndex((current) => (current - 1 + slides.length) % slides.length);
   const showNext = () => setActiveIndex((current) => (current + 1) % slides.length);
@@ -871,7 +870,9 @@ function EditorialIntro({ locale }) {
       <h2>{title}</h2>
       <p>{t.heroBody}</p>
       <div className="editorial-links">
-        {["properties", "services", "interiors", "atelier"].map((key) => (
+        {["properties", "services", "interiors", "atelier"]
+          .filter((key) => pageNavigationIsAvailable(locale, key))
+          .map((key) => (
           <a key={key} href={hrefFor(locale, key)}>
             {t.nav[key]}
             <ArrowRight size={17} weight="light" />
@@ -1594,94 +1595,55 @@ function ArticlePage({ locale, slug, onInquiry }) {
   );
 }
 
-const serviceContent = {
-  services: {
-    image: PAGE_COVERS.services,
-    overlay: "management",
-    eyebrow: {
-      es: "Gestión de propiedades y lifestyle",
-      en: "Property & lifestyle management",
-      de: "Immobilien- & Lifestyle-Management",
-      fr: "Gestion immobilière & art de vivre",
-    },
-    title: {
-      es: "Su propiedad, impecable incluso cuando usted no está.",
-      en: "Your property, impeccable even when you are away.",
-      de: "Ihre Immobilie – makellos, auch wenn Sie nicht vor Ort sind.",
-      fr: "Votre propriété, impeccable même en votre absence.",
-    },
-  },
-  interiors: {
-    image: PAGE_COVERS.interiors,
-    overlay: "standard",
-    eyebrow: {
-      es: "Diseño de interiores",
-      en: "Interior design",
-      de: "Innenarchitektur",
-      fr: "Design d’intérieur",
-    },
-    title: {
-      es: "Interiores serenos, diseñados para vivir y perdurar.",
-      en: "Calm interiors, designed to be lived in and to last.",
-      de: "Ruhige Interieurs, zum Leben und Bleiben entworfen.",
-      fr: "Des intérieurs sereins, conçus pour vivre et durer.",
-    },
-  },
-  about: {
-    image: PAGE_COVERS.about,
-    overlay: "standard",
-    eyebrow: {
-      es: "Agency Luxury Self",
-      en: "Agency Luxury Self",
-      de: "Agency Luxury Self",
-      fr: "Agency Luxury Self",
-    },
-    title: {
-      es: "Criterio local, estándares internacionales y absoluta discreción.",
-      en: "Local judgment, international standards and absolute discretion.",
-      de: "Lokale Expertise, internationale Standards und absolute Diskretion.",
-      fr: "Expertise locale, standards internationaux et discrétion absolue.",
-    },
-  },
-};
-
-function ServicePage({ locale, page }) {
-  const t = copy[locale];
+function ServicePage({ locale, page, editorial }) {
   const content = serviceContent[page];
+  const bodyMode = specializedPageBodyMode(editorial);
   return (
     <main>
       <PageHero
-        image={content.image}
+        image={editorial?.coverImage || content.image}
         overlay={content.overlay}
         eyebrow={content.eyebrow[locale]}
-        title={content.title[locale]}
-        lead={page === "services" ? t.managementMeta : t.heroBody}
+        title={editorial?.title || content.title[locale]}
+        lead={editorial?.excerpt || content.lead[locale]}
       />
-      <section className="service-principles section-pad">
-        {[t.nav.properties, t.nav.services, t.nav.interiors || t.nav.atelier].map((label, index) => (
-          <article key={`${label}-${index}`}>
-            <span>0{index + 1}</span>
-            <h2>{label}</h2>
-            <p>{t.heroBody}</p>
-          </article>
-        ))}
-      </section>
+      {bodyMode === "editorial" && editorial?.bodyHtml ? (
+        <section className="legal-copy section-pad">
+          <article className="rich-content" dangerouslySetInnerHTML={{ __html: editorial.bodyHtml }} />
+        </section>
+      ) : null}
+      {bodyMode === "static" ? (
+        <section className="service-principles section-pad">
+          {content.principles[locale].map((principle, index) => (
+            <article key={`${page}-${principle.title}`}>
+              <span>0{index + 1}</span>
+              <h2>{principle.title}</h2>
+              <p>{principle.body}</p>
+            </article>
+          ))}
+        </section>
+      ) : null}
     </main>
   );
 }
 
-function ContactPage({ locale }) {
+function ContactPage({ locale, editorial }) {
   const t = copy[locale];
   const pageCopy = sourcePageCopy[locale];
   return (
     <main>
       <PageHero
-        image={PAGE_COVERS.contact}
+        image={editorial?.coverImage || PAGE_COVERS.contact}
         overlay="contact"
         eyebrow={pageCopy.contactHeroEyebrow}
-        title={pageCopy.contactHeroTitle}
-        lead={pageCopy.contactHeroLead}
+        title={editorial?.title || pageCopy.contactHeroTitle}
+        lead={editorial?.excerpt || pageCopy.contactHeroLead}
       />
+      {editorial?.bodyCustomized && editorial.bodyHtml ? (
+        <section className="legal-copy section-pad">
+          <article className="rich-content" dangerouslySetInnerHTML={{ __html: editorial.bodyHtml }} />
+        </section>
+      ) : null}
       <section className="contact-strip section-pad">
         <article>
           <MapPin size={23} weight="light" />
@@ -1850,7 +1812,7 @@ function OrderPage({ locale, context }) {
   );
 }
 
-function LegalPage({ locale, page }) {
+function LegalPage({ locale, page, editorial }) {
   const headings = {
     privacy: { es: "Política de privacidad", en: "Privacy policy", de: "Datenschutz", fr: "Politique de confidentialité" },
     cookies: { es: "Política de cookies", en: "Cookie policy", de: "Cookie-Richtlinie", fr: "Politique de cookies" },
@@ -1859,9 +1821,11 @@ function LegalPage({ locale, page }) {
   const content = legalPageContent(page, locale);
   return (
     <main>
-      <PageIntro eyebrow="Agency Luxury Self" title={headings[page][locale]} />
+      <PageIntro eyebrow="Agency Luxury Self" title={editorial?.title || headings[page][locale]} />
       <section className="legal-copy section-pad">
-        {content ? <article className="rich-content" dangerouslySetInnerHTML={{ __html: content.bodyHtml }} /> : (
+        {editorial?.bodyHtml ? (
+          <article className="rich-content" dangerouslySetInnerHTML={{ __html: editorial.bodyHtml }} />
+        ) : content ? <article className="rich-content" dangerouslySetInnerHTML={{ __html: content.bodyHtml }} /> : (
           <>
             <p>Agency Luxury Self · analucia@agencyluxuryself.com · +34 613 27 78 59</p>
             <p>{copy[locale].footerClaim}</p>
@@ -1909,9 +1873,11 @@ function Footer({ locale }) {
       </div>
       <div className="footer-bottom">
         <nav>
-          <a href={hrefFor(locale, "privacy")}>{routeLabel(locale, "privacy")}</a>
-          <a href={hrefFor(locale, "cookies")}>{routeLabel(locale, "cookies")}</a>
-          <a href={hrefFor(locale, "legal")}>{routeLabel(locale, "legal")}</a>
+          {["privacy", "cookies", "legal"]
+            .filter((page) => pageNavigationIsAvailable(locale, page))
+            .map((page) => (
+              <a key={page} href={hrefFor(locale, page)}>{routeLabel(locale, page)}</a>
+            ))}
         </nav>
         <p>© {new Date().getFullYear()} Agency Luxury Self. {t.rights}</p>
       </div>
@@ -1930,6 +1896,13 @@ function routeLabel(locale, page) {
 
 function PageRenderer({ route, cart, context, onInquiry }) {
   const { locale, page } = route;
+  const editablePageSeed = buildEditablePageSeed(page, locale);
+  const corePage = runtimeCustomizedPage(
+    context,
+    locale,
+    typeof window === "undefined" ? "" : window.location.pathname,
+    { seedBody: editablePageSeed?.content },
+  );
   if (page === "home") return <HomePage locale={locale} />;
   if (page === "properties") return <PropertiesPage locale={locale} />;
   if (page === "property") return <PropertyPage locale={locale} slug={route.slug} onInquiry={onInquiry} />;
@@ -1937,12 +1910,12 @@ function PageRenderer({ route, cart, context, onInquiry }) {
   if (page === "product") return <ProductPage locale={locale} slug={route.slug} />;
   if (page === "blog") return <BlogPage locale={locale} />;
   if (page === "article") return <ArticlePage locale={locale} slug={route.slug} onInquiry={onInquiry} />;
-  if (["services", "interiors", "about"].includes(page)) return <ServicePage locale={locale} page={page} />;
-  if (page === "contact") return <ContactPage locale={locale} />;
+  if (["services", "interiors", "about"].includes(page)) return <ServicePage locale={locale} page={page} editorial={corePage} />;
+  if (page === "contact") return <ContactPage locale={locale} editorial={corePage} />;
   if (page === "cart") return <CartPage locale={locale} cart={cart} />;
   if (page === "checkout") return <CheckoutPage locale={locale} cart={cart} />;
   if (page === "order") return <OrderPage locale={locale} context={context} />;
-  if (["privacy", "cookies", "legal"].includes(page)) return <LegalPage locale={locale} page={page} />;
+  if (["privacy", "cookies", "legal"].includes(page)) return <LegalPage locale={locale} page={page} editorial={corePage} />;
   return <NotFound locale={locale} />;
 }
 

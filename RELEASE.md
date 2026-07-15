@@ -2,11 +2,13 @@
 
 Este repositorio produce un release inmutable `remote-static-app` para el contrato `sales@1.1.0` de Nuklo. El artefacto final se genera en `out/` y contiene el manifest importable, un HTML fisico unico por descriptor de ruta, assets, metadatos SEO, mapa de redirecciones y `integrity.json` con SHA-256.
 
+El manifest referencia `content/editorial-content.json`, un sidecar versionado con las paginas editoriales y las 32 versiones localizadas del Journal. Cada registro conserva una key estable, locale, grupo de traduccion, ruta publica, slug CMS globalmente unico, SEO y `coverMediaKey`. Nuklo resuelve esos covers desde `mediaAssets` y crea contenido editable en el tenant sin incluir los cuerpos extensos dentro del manifest de 256 KiB.
+
 ## Comandos
 
 - `npm run release`: compila con la base publica versionada, prepara `out/`, ejecuta la validacion exacta del contrato de Nuklo cuando el Core hermano esta disponible, verifica integridad y revisa enlaces.
 - `npm run prepare:release`: vuelve a crear el artefacto completo.
-- `npm run verify:release`: valida manifest, rutas, HTML, metadatos y checksums.
+- `npm run verify:release`: valida manifest, rutas, sidecar editorial, covers, HTML, metadatos y checksums.
 - `npm run check:links`: revisa referencias locales, rutas declaradas y URLs del sitemap.
 
 La URL importable es `https://themes.nuklo.cloud/agency-luxury-self/1.0.5/nuklo.template.json`. El host de releases se bloquea en `robots.txt` para evitar contenido duplicado; el tenant de Nuklo publica canonical, hreflang, robots y sitemap en su propio dominio.

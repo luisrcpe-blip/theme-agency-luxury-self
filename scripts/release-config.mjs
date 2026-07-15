@@ -1,13 +1,17 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { load } from "cheerio";
+
+import { buildEditablePageSeed } from "../src/page-editorial-content.js";
 
 export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const OUT_DIR = resolve(PROJECT_ROOT, "out");
 export const DIST_DIR = resolve(PROJECT_ROOT, "dist");
 export const MANIFEST_FILE = "nuklo.template.json";
 export const INTEGRITY_FILE = "integrity.json";
+export const EDITORIAL_CONTENT_FILE = "content/editorial-content.json";
 
 export const LOCALES = ["es", "en", "de", "fr"];
 export const PAGE_COVER_PATHS = Object.freeze({
@@ -192,15 +196,15 @@ const SEO = {
 const STATIC_GROUPS = [
   { key: "shop.home", page: "home", surface: "SHOP_HOME", runtimeKind: "surface" },
   { key: "content.properties", page: "properties", segment: "properties", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.interiors", page: "interiors", segment: "interiors", surface: "CONTENT_PAGE", runtimeKind: "surface" },
+  { key: "content.interiors", page: "interiors", segment: "interiors", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
   { key: "shop.collection", page: "atelier", segment: "atelier", surface: "SHOP_COLLECTION", runtimeKind: "surface" },
-  { key: "content.services", page: "services", segment: "services", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.about", page: "about", segment: "about", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.blog", page: "blog", segment: "blog", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.contact", page: "contact", segment: "contact", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.privacy", page: "privacy", segment: "privacy", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.cookies", page: "cookies", segment: "cookies", surface: "CONTENT_PAGE", runtimeKind: "surface" },
-  { key: "content.legal", page: "legal", segment: "legal", surface: "CONTENT_PAGE", runtimeKind: "surface" },
+  { key: "content.services", page: "services", segment: "services", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
+  { key: "content.about", page: "about", segment: "about", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
+  { key: "content.blog", page: "blog", segment: "blog", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "blogIndex" },
+  { key: "content.contact", page: "contact", segment: "contact", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
+  { key: "content.privacy", page: "privacy", segment: "privacy", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
+  { key: "content.cookies", page: "cookies", segment: "cookies", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
+  { key: "content.legal", page: "legal", segment: "legal", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "page", seedPage: true },
   { key: "commerce.cart", page: "cart", segment: "cart", surface: "SHOP_HOME", runtimeKind: "cart", private: true },
   { key: "commerce.checkout", page: "checkout", segment: "checkout", surface: "SHOP_HOME", runtimeKind: "checkout", private: true },
 ];
@@ -208,6 +212,7 @@ const STATIC_GROUPS = [
 const DYNAMIC_GROUPS = [
   { key: "shop.product", page: "atelier", segment: "atelier", param: ":slug", surface: "SHOP_PRODUCT", runtimeKind: "surface" },
   { key: "commerce.order", page: "order", segment: "order", param: ":token", surface: "SHOP_HOME", runtimeKind: "order", private: true },
+  { key: "content.blog-post", page: "blog", segment: "blog", param: ":slug", surface: "CONTENT_PAGE", runtimeKind: "surface", editorialKind: "blogPost" },
 ];
 
 function cleanPath(pathname) {
@@ -325,6 +330,261 @@ function cleanMigratedHtml(value, baseUrl) {
     .replace(/(["'])\/assets\//g, `$1${baseUrl}assets/`);
 }
 
+function normalizeMarkdownText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function markdownInline($, node) {
+  if (node.type === "text") return String(node.data || "");
+  if (node.type !== "tag") return "";
+  const tag = String(node.tagName || "").toLowerCase();
+  const inner = $(node).contents().toArray().map((child) => markdownInline($, child)).join("");
+  const text = normalizeMarkdownText(inner);
+  if (!text && tag !== "br") return "";
+  if (tag === "br") return "\n";
+  if (tag === "strong" || tag === "b") return `**${text}**`;
+  if (tag === "em" || tag === "i") return `*${text}*`;
+  if (tag === "a") {
+    const href = String($(node).attr("href") || "").trim();
+    return href ? `[${text}](${href})` : text;
+  }
+  return inner;
+}
+
+function markdownTable($, node) {
+  const rows = $(node).find("tr").toArray().map((row) =>
+    $(row).children("th,td").toArray().map((cell) =>
+      normalizeMarkdownText($(cell).contents().toArray().map((child) => markdownInline($, child)).join(""))
+        .replace(/\|/g, "\\|"),
+    ),
+  ).filter((row) => row.length > 0);
+  if (!rows.length) return "";
+  const width = Math.max(...rows.map((row) => row.length));
+  const normalizedRows = rows.map((row) => [...row, ...Array(Math.max(0, width - row.length)).fill("")]);
+  return [
+    `| ${normalizedRows[0].join(" | ")} |`,
+    `| ${Array(width).fill("---").join(" | ")} |`,
+    ...normalizedRows.slice(1).map((row) => `| ${row.join(" | ")} |`),
+  ].join("\n");
+}
+
+function markdownBlock($, node, baseUrl) {
+  if (node.type === "text") return normalizeMarkdownText(node.data);
+  if (node.type !== "tag") return "";
+  const tag = String(node.tagName || "").toLowerCase();
+  const inline = () => normalizeMarkdownText($(node).contents().toArray().map((child) => markdownInline($, child)).join(""));
+  const blocks = () => $(node).contents().toArray().map((child) => markdownBlock($, child, baseUrl)).filter(Boolean).join("\n\n");
+  if (/^h[1-4]$/.test(tag)) {
+    const level = Math.min(Number(tag.slice(1)), 3);
+    return `${"#".repeat(level)} ${inline()}`;
+  }
+  if (tag === "p") return inline();
+  if (tag === "hr") return "---";
+  if (tag === "blockquote") return inline().split("\n").map((line) => `> ${line}`).join("\n");
+  if (tag === "img") {
+    const rawSrc = String($(node).attr("src") || "").trim();
+    if (!rawSrc) return "";
+    const src = rawSrc.startsWith("/") ? absoluteAsset(baseUrl, rawSrc) : rawSrc;
+    return `![${normalizeMarkdownText($(node).attr("alt"))}](${src})`;
+  }
+  if (tag === "audio") {
+    const rawSrc = String($(node).attr("src") || $(node).find("source").first().attr("src") || "").trim();
+    if (!rawSrc) return "";
+    const src = rawSrc.startsWith("/") ? absoluteAsset(baseUrl, rawSrc) : rawSrc;
+    return `::audio[Audio](${src})`;
+  }
+  if (tag === "figure") {
+    const media = $(node).children("img,audio,table").toArray().map((child) => markdownBlock($, child, baseUrl)).filter(Boolean);
+    const caption = normalizeMarkdownText($(node).children("figcaption").first().text());
+    return [...media, ...(caption ? [`_${caption}_`] : [])].join("\n");
+  }
+  if (tag === "table") return markdownTable($, node);
+  if (tag === "ul" || tag === "ol") {
+    return $(node).children("li").toArray().map((item, index) => {
+      const marker = tag === "ol" ? `${index + 1}.` : "-";
+      return `${marker} ${normalizeMarkdownText($(item).contents().toArray().map((child) => markdownInline($, child)).join(""))}`;
+    }).join("\n");
+  }
+  if (tag === "figcaption" || tag === "source") return "";
+  return blocks();
+}
+
+export function richHtmlToNukloMarkdown(value, baseUrl) {
+  const sanitized = cleanMigratedHtml(value, baseUrl);
+  const $ = load(`<main id="nuklo-markdown-root">${sanitized}</main>`, null, false);
+  const markdown = $("#nuklo-markdown-root").contents().toArray()
+    .map((node) => markdownBlock($, node, baseUrl))
+    .filter(Boolean)
+    .join("\n\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return markdown;
+}
+
+function cmsSlugFromRoute(routePath) {
+  return cleanPath(routePath).split("/").filter(Boolean).join("-").toLowerCase();
+}
+
+function mediaKeyForPath(path) {
+  return `agency-luxury-self-editorial-${createHash("sha256").update(String(path)).digest("hex").slice(0, 16)}`;
+}
+
+function localEditorialMediaPath(value, article) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const parsed = new URL(raw, "https://release.local");
+  if (parsed.origin !== "https://release.local" || !parsed.pathname.startsWith("/assets/")) {
+    throw new Error(`Media editorial fuera del release en ${article.translationKey}:${article.locale}: ${raw}`);
+  }
+  return parsed.pathname;
+}
+
+function embeddedArticleMedia(article) {
+  const $ = load(`<main id="nuklo-media-root">${String(article.bodyHtml || "")}</main>`, null, false);
+  return $("#nuklo-media-root").find("img[src], audio[src], audio source[src], picture source[src]").toArray().map((node) => {
+    const tag = String(node.tagName || "").toLowerCase();
+    const audio = tag === "audio" || $(node).parents("audio").length > 0;
+    return {
+      path: localEditorialMediaPath($(node).attr("src"), article),
+      mediaType: audio ? "audio" : "image",
+      alt: audio ? `Audio — ${article.title}` : normalizeMarkdownText($(node).attr("alt")) || article.title,
+    };
+  }).filter((entry) => entry.path);
+}
+
+function buildReleaseMediaAssets(baseUrl, articles) {
+  const assets = SOURCE_MEDIA_ASSETS.map(({ path, ...asset }) => ({
+    ...asset,
+    path,
+    url: absoluteAsset(baseUrl, path),
+  }));
+  const knownPaths = new Set(assets.map((asset) => asset.path));
+  const articleMediaByPath = new Map();
+  const sortedArticles = [...articles].sort((a, b) => `${a.translationKey}:${a.locale}`.localeCompare(`${b.translationKey}:${b.locale}`));
+  for (const article of sortedArticles) {
+    const path = localEditorialMediaPath(article.heroImage, article);
+    if (!path || articleMediaByPath.has(path)) continue;
+    articleMediaByPath.set(path, {
+      article,
+      mediaType: "image",
+      role: "cover",
+      alt: article.title,
+    });
+  }
+  for (const article of sortedArticles) {
+    for (const media of embeddedArticleMedia(article)) {
+      if (articleMediaByPath.has(media.path)) continue;
+      articleMediaByPath.set(media.path, {
+        article,
+        mediaType: media.mediaType,
+        role: "body",
+        alt: media.alt,
+      });
+    }
+  }
+  for (const [path, media] of [...articleMediaByPath].sort(([left], [right]) => left.localeCompare(right))) {
+    if (knownPaths.has(path)) continue;
+    assets.push({
+      key: mediaKeyForPath(path),
+      path,
+      url: absoluteAsset(baseUrl, path),
+      kind: "MISC",
+      title: media.mediaType === "audio" ? `${media.article.title} — audio` : media.article.title,
+      alt: media.alt,
+      tags: ["agency-luxury-self", "journal", media.role, media.mediaType],
+    });
+    knownPaths.add(path);
+  }
+  return assets;
+}
+
+function editorialCover(mediaByUrl, coverPath, baseUrl) {
+  const coverImage = absoluteAsset(baseUrl, coverPath);
+  const media = mediaByUrl.get(coverImage);
+  if (!media) throw new Error(`No existe mediaAsset para el cover editorial ${coverPath}.`);
+  return {
+    coverMediaKey: media.key,
+    // These are locked, human-reviewed source images shipped by the theme.
+    // Persist the confirmation so an editor can save copy changes without
+    // being blocked by the cover-image cleanliness guard.
+    coverCleanConfirmed: true,
+  };
+}
+
+function normalizePublishedAt(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) throw new Error(`Fecha editorial invalida: ${value}`);
+  return parsed.toISOString();
+}
+
+function buildEditorialContent({ baseUrl, source, staticRoutes, releaseMediaAssets }) {
+  const mediaByUrl = new Map(releaseMediaAssets.map((asset) => [asset.url, asset]));
+  const legalByKey = new Map((source.localizedContent.legalPages || []).map((entry) => [entry.key, entry]));
+  const legalKeyByPage = { privacy: "privacy", cookies: "cookies", legal: "legal-notice" };
+  const pages = STATIC_GROUPS.filter((group) => group.seedPage).flatMap((group) =>
+    LOCALES.map((locale) => {
+      const route = staticRoutes.find((entry) => entry.translationKey === group.key && entry.locale === locale);
+      if (!route) throw new Error(`Falta ruta editorial ${group.key}:${locale}.`);
+      const legal = legalByKey.get(legalKeyByPage[group.page])?.localized?.[locale] || null;
+      const editablePage = buildEditablePageSeed(group.page, locale);
+      const title = legal?.title || editablePage?.title || route.seo.title.replace(/\s+\|\s+Agency Luxury Self$/i, "");
+      const excerpt = safeDescription(legal?.seoDescription || editablePage?.excerpt || route.seo.description, title);
+      const content = legal?.bodyHtml
+        ? richHtmlToNukloMarkdown(legal.bodyHtml, baseUrl)
+        : editablePage?.content || route.seo.description;
+      const coverPath = PAGE_COVER_PATHS[group.page] || PAGE_COVER_PATHS.home;
+      const cover = editorialCover(mediaByUrl, coverPath, baseUrl);
+      return {
+        key: `page:${group.key}:${locale}`,
+        kind: "page",
+        locale,
+        translationKey: group.key,
+        routePath: route.path,
+        slug: cmsSlugFromRoute(route.path),
+        title,
+        excerpt,
+        content,
+        ...cover,
+        coverAlt: title,
+        seoTitle: route.seo.title,
+        seoDescription: route.seo.description,
+        active: true,
+      };
+    }),
+  );
+  const blogPosts = [...source.articles]
+    .sort((left, right) => `${left.translationKey}:${left.locale}`.localeCompare(`${right.translationKey}:${right.locale}`))
+    .map((article) => {
+      const routePath = joinRoute(article.locale, SEGMENTS[article.locale].blog, article.slug);
+      const body = richHtmlToNukloMarkdown(article.bodyHtml, baseUrl) || article.description || article.title;
+      const cover = editorialCover(mediaByUrl, article.heroImage, baseUrl);
+      const publishedAt = normalizePublishedAt(article.publishedAt);
+      return {
+        key: `blogPost:${article.translationKey}:${article.locale}`,
+        kind: "blogPost",
+        locale: article.locale,
+        translationKey: article.translationKey,
+        routePath,
+        slug: cmsSlugFromRoute(routePath),
+        title: article.title,
+        excerpt: articleDescription(article),
+        body,
+        ...cover,
+        coverAlt: article.title,
+        seoTitle: safeSeoTitle(article.title),
+        seoDescription: articleDescription(article),
+        author: article.author,
+        publisher: article.publisher,
+        ...(article.category ? { category: article.category } : {}),
+        ...(publishedAt ? { publishedAt } : {}),
+        active: true,
+      };
+    });
+  return { schemaVersion: 1, pages, blogPosts };
+}
+
 function localizedPropertyDescription(locale, property) {
   const place = property.location || property.title;
   const templates = {
@@ -393,6 +653,7 @@ function buildStaticRoutes(baseUrl) {
         translationKey: group.key,
         surface: group.surface,
         runtimeKind: group.runtimeKind,
+        ...(group.editorialKind ? { editorialKind: group.editorialKind } : {}),
         seo: {
           title,
           description,
@@ -506,12 +767,13 @@ function buildDynamicRoutes(baseUrl) {
         translationKey: group.key,
         surface: group.surface,
         runtimeKind: group.runtimeKind,
+        ...(group.editorialKind ? { editorialKind: group.editorialKind } : {}),
         seo: {
           title,
           description,
           canonical: "",
           ogImage: absoluteAsset(baseUrl, PAGE_COVER_PATHS[group.page] || PAGE_COVER_PATHS.home),
-          private: true,
+          private: Boolean(group.private),
         },
       };
     }),
@@ -673,6 +935,13 @@ export async function buildReleaseModel({ baseUrl, sourceCommit, sourceBranch })
   ];
   const publicRoutes = buildPublicRoutes(releaseBase, internalRoutes, source.articles);
   const seoMigration = buildRedirects(source.sourceArticles, source.properties, source.inventory, source.redirectAudit);
+  const releaseMediaAssets = buildReleaseMediaAssets(releaseBase, source.articles);
+  const editorialContent = buildEditorialContent({
+    baseUrl: releaseBase,
+    source,
+    staticRoutes,
+    releaseMediaAssets,
+  });
 
   const manifest = {
     id: source.release.themeId,
@@ -709,11 +978,9 @@ export async function buildReleaseModel({ baseUrl, sourceCommit, sourceBranch })
       prefixDefault: true,
       locales: LOCALE_DEFINITIONS,
     },
+    editorialContent: EDITORIAL_CONTENT_FILE,
     routes: internalRoutes.map(stripRoute),
-    mediaAssets: SOURCE_MEDIA_ASSETS.map(({ path, ...asset }) => ({
-      ...asset,
-      url: absoluteAsset(releaseBase, path),
-    })),
+    mediaAssets: releaseMediaAssets.map(({ path, ...asset }) => asset),
     routeSeo: internalRoutes.map(manifestSeo),
     legacySeo: {
       schemaVersion: 1,
@@ -735,6 +1002,7 @@ export async function buildReleaseModel({ baseUrl, sourceCommit, sourceBranch })
     internalRoutes,
     publicRoutes,
     redirects: seoMigration,
+    editorialContent,
     counts: {
       articles: source.sourceArticles.length,
       localizedArticleRoutes: source.articles.length,
@@ -742,6 +1010,9 @@ export async function buildReleaseModel({ baseUrl, sourceCommit, sourceBranch })
       completeArticleGroups: completeArticleGroups(source.articles).length,
       routeDescriptors: internalRoutes.length,
       publicRoutes: publicRoutes.length,
+      editorialPages: editorialContent.pages.length,
+      editorialBlogPosts: editorialContent.blogPosts.length,
+      mediaAssets: releaseMediaAssets.length,
     },
   };
 }

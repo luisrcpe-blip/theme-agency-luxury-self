@@ -13,6 +13,7 @@ import { spawnSync } from "node:child_process";
 
 import {
   DIST_DIR,
+  EDITORIAL_CONTENT_FILE,
   INTEGRITY_FILE,
   LOCALES,
   MANIFEST_FILE,
@@ -393,6 +394,9 @@ async function main() {
 
   const baseHtml = await readFile(resolve(DIST_DIR, "index.html"), "utf8");
   await writeRouteHtml(model, baseHtml);
+  const editorialContentPath = resolve(OUT_DIR, ...EDITORIAL_CONTENT_FILE.split("/"));
+  await mkdir(dirname(editorialContentPath), { recursive: true });
+  await writeFile(editorialContentPath, json(model.editorialContent), "utf8");
   await writeFile(resolve(OUT_DIR, MANIFEST_FILE), json(model.manifest), "utf8");
   await writeFile(resolve(OUT_DIR, "redirects.json"), json(model.redirects), "utf8");
   await writeFile(resolve(OUT_DIR, "sitemap.xml"), renderSitemap(model), "utf8");

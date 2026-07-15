@@ -2,6 +2,8 @@ import articles from "./generated/articles.json";
 import properties from "./generated/properties.json";
 import localizedContent from "./generated/localized-content.json";
 import { localizePropertyFacts } from "./property-localization.js";
+import { mergeRuntimeArticles, runtimeArticleForRoute } from "./editorial-runtime.js";
+import { getRuntimeContext } from "./runtime.js";
 
 const RELEASE_BASE_PATH = (() => {
   const value = String(import.meta.env.BASE_URL || "/");
@@ -658,13 +660,17 @@ export function localizedHref(pathname, targetLocale) {
 }
 
 export function articlesForLocale(locale) {
-  return allArticles
-    .filter((article) => article.locale === locale)
-    .sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0));
+  return mergeRuntimeArticles(allArticles, getRuntimeContext(), locale);
 }
 
 export function articleForRoute(locale, slug) {
-  return allArticles.find((article) => article.locale === locale && article.slug === slug) || null;
+  return runtimeArticleForRoute(
+    allArticles,
+    getRuntimeContext(),
+    locale,
+    slug,
+    typeof window === "undefined" ? "" : window.location.pathname,
+  );
 }
 
 export function propertiesForLocale(locale) {

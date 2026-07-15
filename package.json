@@ -11,8 +11,10 @@
     "prepare:release": "node scripts/prepare-release.mjs",
     "prepare:demo": "node scripts/prepare-demo.mjs",
     "verify:release": "node scripts/verify-release.mjs",
+    "test:editorial-runtime": "node scripts/test-editorial-runtime.mjs",
+    "test:release-config": "node scripts/test-release-config.mjs",
     "check:links": "node scripts/check-links.mjs",
-    "release": "npm run prepare:release && npm run verify:release && npm run check:links"
+    "release": "npm run test:editorial-runtime && npm run test:release-config && npm run prepare:release && npm run verify:release && npm run check:links"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

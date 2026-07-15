@@ -5,6 +5,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 
 import {
+  EDITORIAL_CONTENT_FILE,
   INTEGRITY_FILE,
   LOCALES,
   MANIFEST_FILE,
@@ -19,10 +20,12 @@ import {
   localizePropertyFacts,
   propertyMatchesType,
 } from "../src/property-localization.js";
+import { EDITABLE_PAGE_KEYS } from "../src/page-editorial-content.js";
 
 const MAX_MANIFEST_BYTES = 256 * 1024;
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
 const MAX_ROUTE_HTML_BYTES = 16 * 1024 * 1024;
+const EDITABLE_PAGE_TRANSLATION_KEYS = new Set(EDITABLE_PAGE_KEYS.map((page) => `content.${page}`));
 const REQUIRED_SURFACES = ["SHOP_HOME", "SHOP_COLLECTION", "SHOP_PRODUCT", "CONTENT_PAGE"];
 const REQUIRED_CAPABILITIES = [
   "tenant",
@@ -65,6 +68,7 @@ const EXPECTED_OG_BY_TRANSLATION_KEY = Object.freeze({
   "content.services": PAGE_COVER_PATHS.services,
   "content.about": PAGE_COVER_PATHS.about,
   "content.blog": PAGE_COVER_PATHS.blog,
+  "content.blog-post": PAGE_COVER_PATHS.blog,
   "content.contact": PAGE_COVER_PATHS.contact,
   "content.privacy": PAGE_COVER_PATHS.home,
   "content.cookies": PAGE_COVER_PATHS.home,
@@ -175,6 +179,7 @@ function validateManifestShape(manifest) {
   assert(manifest.i18n?.defaultLocale === "es", "i18n.defaultLocale debe ser es.");
   assert(manifest.i18n?.prefixDefault === true, "i18n.prefixDefault debe ser true.");
   assert(JSON.stringify(manifest.i18n?.locales?.map((entry) => entry.code)) === JSON.stringify(LOCALES), "Locales deben ser es/en/de/fr en orden estable.");
+  assert(manifest.editorialContent === EDITORIAL_CONTENT_FILE, `Manifest editorialContent debe ser ${EDITORIAL_CONTENT_FILE}.`);
 }
 
 async function validateRoutes(manifest) {
@@ -206,6 +211,12 @@ async function validateRoutes(manifest) {
     if (route.runtimeKind === "order") assert(route.path.split("/").includes(":token"), `Order sin :token: ${route.path}`);
     if (route.runtimeKind !== "order") assert(!route.path.split("/").includes(":token"), `:token fuera de order: ${route.path}`);
     if (route.runtimeKind !== "surface") assert(!route.path.split("/").includes(":slug"), `:slug fuera de surface: ${route.path}`);
+    if (route.editorialKind !== undefined) {
+      assert(["page", "blogIndex", "blogPost"].includes(route.editorialKind), `editorialKind invalido en ${route.path}.`);
+      assert(route.surface === "CONTENT_PAGE" && route.runtimeKind === "surface", `Ruta editorial invalida en ${route.path}.`);
+      if (route.editorialKind === "blogPost") assert(route.path.split("/").includes(":slug"), `blogPost dinamico sin :slug: ${route.path}`);
+      if (route.editorialKind === "blogIndex") assert(!route.path.includes(":"), `blogIndex no puede ser dinamico: ${route.path}`);
+    }
     const file = resolve(OUT_DIR, ...route.html.split("/"));
     assert(existsSync(file), `HTML de ruta ausente: ${route.html}`);
     const size = (await stat(file)).size;
@@ -241,13 +252,24 @@ async function validateRoutes(manifest) {
   assert(seoPaths.size === routes.length && [...paths].every((path) => seoPaths.has(path)), "routeSeo no coincide con routes.");
   assert(prerenderedProperties === 44, `Se esperaban 44 propiedades prerenderizadas; hay ${prerenderedProperties}.`);
   assert(prerenderedArticles === 32, `Se esperaban 32 articulos prerenderizados; hay ${prerenderedArticles}.`);
+  const dynamicBlogRoutes = routes.filter((route) => route.editorialKind === "blogPost");
+  assert(dynamicBlogRoutes.length === LOCALES.length, `Se esperaban ${LOCALES.length} rutas dinamicas de blog; hay ${dynamicBlogRoutes.length}.`);
+  for (const locale of LOCALES) {
+    const dynamic = dynamicBlogRoutes.find((route) => route.locale === locale);
+    assert(dynamic?.path === `/${locale}/blog/:slug/`, `Ruta dinamica de blog invalida para ${locale}.`);
+    const dynamicIndex = routes.indexOf(dynamic);
+    const exactIndexes = routes
+      .map((route, index) => route.locale === locale && route.translationKey.startsWith("article.") ? index : -1)
+      .filter((index) => index >= 0);
+    assert(exactIndexes.length > 0 && dynamicIndex > Math.max(...exactIndexes), `La ruta dinamica de blog debe ir despues de las rutas exactas para ${locale}.`);
+  }
   return { routes: routes.length, totalHtmlBytes, prerenderedProperties, prerenderedArticles };
 }
 
 async function validateSourceAssets(manifest) {
   const appUrl = new URL(manifest.appUrl);
   const mediaAssets = manifest.mediaAssets || [];
-  assert(mediaAssets.length === SOURCE_MEDIA_ASSETS.length, `Se esperaban ${SOURCE_MEDIA_ASSETS.length} mediaAssets fuente; hay ${mediaAssets.length}.`);
+  assert(mediaAssets.length >= SOURCE_MEDIA_ASSETS.length, `Se esperaban al menos ${SOURCE_MEDIA_ASSETS.length} mediaAssets fuente; hay ${mediaAssets.length}.`);
   assert(new Set(mediaAssets.map((asset) => asset.key)).size === mediaAssets.length, "mediaAssets contiene keys duplicadas.");
   const mediaByKey = new Map(mediaAssets.map((asset) => [asset.key, asset]));
   for (const expected of SOURCE_MEDIA_ASSETS) {
@@ -256,6 +278,13 @@ async function validateSourceAssets(manifest) {
     assert(asset.kind === expected.kind, `Kind incorrecto para ${expected.key}: ${asset.kind}`);
     const expectedUrl = new URL(expected.path.replace(/^\//, ""), manifest.appUrl).toString();
     assert(asset.url === expectedUrl, `URL incorrecta para ${expected.key}: ${asset.url}`);
+  }
+  for (const asset of mediaAssets) {
+    const url = new URL(asset.url);
+    assert(url.protocol === "https:", `Media asset sin HTTPS: ${asset.key}`);
+    assert(url.origin === appUrl.origin && url.pathname.startsWith(appUrl.pathname), `Media asset fuera del release: ${asset.key}`);
+    const relativeAsset = url.pathname.slice(appUrl.pathname.length).replace(/^\//, "");
+    assert(relativeAsset && existsSync(resolve(OUT_DIR, ...relativeAsset.split("/"))), `Archivo de mediaAsset ausente: ${asset.key}`);
   }
 
   for (const [relativeAsset, expectedHash] of Object.entries(EXPECTED_SOURCE_HASHES)) {
@@ -283,6 +312,146 @@ async function validateSourceAssets(manifest) {
   }
 
   return { mediaAssets: mediaAssets.length, sourceHashes: Object.keys(EXPECTED_SOURCE_HASHES).length };
+}
+
+function extractMarkdownMediaUrls(value) {
+  const body = String(value || "");
+  return [
+    ...[...body.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map((match) => match[1]),
+    ...[...body.matchAll(/::audio\[[^\]]*\]\(([^)]+)\)/g)].map((match) => match[1]),
+  ];
+}
+
+function extractHtmlMediaSources(value) {
+  return [...String(value || "").matchAll(/<(?:img|audio|source)\b[^>]*\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)')/gi)]
+    .map((match) => match[1] || match[2])
+    .filter(Boolean);
+}
+
+async function validateEditorialContent(manifest) {
+  assert(manifest.editorialContent === EDITORIAL_CONTENT_FILE, "Referencia del sidecar editorial invalida.");
+  const sidecarPath = resolve(OUT_DIR, ...EDITORIAL_CONTENT_FILE.split("/"));
+  assert(existsSync(sidecarPath), `Sidecar editorial ausente: ${EDITORIAL_CONTENT_FILE}`);
+  const raw = await readFile(sidecarPath);
+  assert(raw.byteLength <= 2 * 1024 * 1024, "El sidecar editorial excede 2 MiB.");
+  const sidecar = JSON.parse(raw.toString("utf8"));
+  assert(sidecar.schemaVersion === 1, "editorialContent.schemaVersion debe ser 1.");
+  assert(Array.isArray(sidecar.pages), "editorialContent.pages debe ser un array.");
+  assert(Array.isArray(sidecar.blogPosts), "editorialContent.blogPosts debe ser un array.");
+  assert(sidecar.pages.length === 28, `Se esperaban 28 paginas editoriales localizadas; hay ${sidecar.pages.length}.`);
+  assert(sidecar.blogPosts.length === 32, `Se esperaban 32 articulos editables localizados; hay ${sidecar.blogPosts.length}.`);
+
+  const routeByPath = new Map((manifest.routes || []).filter((route) => !route.path.includes(":")).map((route) => [route.path, route]));
+  const mediaByKey = new Map((manifest.mediaAssets || []).map((asset) => [asset.key, asset]));
+  const mediaByUrl = new Map((manifest.mediaAssets || []).map((asset) => [new URL(asset.url).toString(), asset]));
+  const appUrl = new URL(manifest.appUrl);
+  const keys = new Set();
+  const routes = new Set();
+  const pageSlugs = new Set();
+  const postSlugs = new Set();
+  const translationGroups = new Map();
+
+  async function validateEntry(entry, expectedKind, index) {
+    const label = `${expectedKind}[${index}]`;
+    assert(entry && typeof entry === "object" && !Array.isArray(entry), `${label} debe ser un objeto.`);
+    assert(entry.kind === expectedKind, `${label}.kind invalido.`);
+    assert(typeof entry.key === "string" && entry.key.length > 4, `${label}.key es obligatorio.`);
+    assert(!keys.has(entry.key), `Key editorial duplicada: ${entry.key}`);
+    keys.add(entry.key);
+    assert(LOCALES.includes(entry.locale), `${label}.locale invalido.`);
+    assert(typeof entry.translationKey === "string" && entry.translationKey.length > 3, `${label}.translationKey es obligatorio.`);
+    assert(typeof entry.routePath === "string" && isSafeRoutePath(entry.routePath) && !entry.routePath.includes(":"), `${label}.routePath invalido.`);
+    assert(!routes.has(entry.routePath), `routePath editorial duplicado: ${entry.routePath}`);
+    routes.add(entry.routePath);
+    const route = routeByPath.get(entry.routePath);
+    assert(route, `No existe descriptor exacto para ${entry.routePath}.`);
+    assert(route.locale === entry.locale, `Locale de ruta no coincide en ${entry.routePath}.`);
+    assert(route.translationKey === (expectedKind === "page" ? entry.translationKey : `article.${entry.translationKey}`), `translationKey de ruta no coincide en ${entry.routePath}.`);
+    assert(entry.routePath.startsWith(`/${entry.locale}/`), `Prefijo localizado ausente en ${entry.routePath}.`);
+    assert(typeof entry.slug === "string" && /^[a-z0-9][a-z0-9-]*$/.test(entry.slug), `${label}.slug invalido: ${entry.slug}`);
+    const expectedSlug = normalizePath(entry.routePath).split("/").filter(Boolean).join("-").toLowerCase();
+    assert(entry.slug === expectedSlug, `${label}.slug no deriva de routePath.`);
+    const slugSet = expectedKind === "page" ? pageSlugs : postSlugs;
+    assert(!slugSet.has(entry.slug), `Slug editorial duplicado para ${expectedKind}: ${entry.slug}`);
+    slugSet.add(entry.slug);
+    assert(typeof entry.title === "string" && entry.title.trim(), `${label}.title es obligatorio.`);
+    assert(typeof entry.excerpt === "string" && entry.excerpt.trim(), `${label}.excerpt es obligatorio.`);
+    assert(typeof entry.seoTitle === "string" && entry.seoTitle.trim(), `${label}.seoTitle es obligatorio.`);
+    assert(typeof entry.seoDescription === "string" && entry.seoDescription.trim(), `${label}.seoDescription es obligatorio.`);
+    assert(entry.active === true, `${label}.active debe ser true.`);
+    assert(entry.coverCleanConfirmed === true, `${label}.coverCleanConfirmed debe confirmar el cover revisado.`);
+    assert(!entry.coverImage, `${label} debe referenciar el cover por coverMediaKey, no duplicar coverImage.`);
+    assert(typeof entry.coverMediaKey === "string" && entry.coverMediaKey, `${label}.coverMediaKey es obligatorio.`);
+    const coverAsset = mediaByKey.get(entry.coverMediaKey);
+    assert(coverAsset, `coverMediaKey desconocido en ${label}: ${entry.coverMediaKey}`);
+    const coverUrl = new URL(coverAsset.url);
+    assert(coverUrl.protocol === "https:", `Cover sin HTTPS en ${label}.`);
+    assert(coverUrl.origin === appUrl.origin && coverUrl.pathname.startsWith(appUrl.pathname), `Cover fuera del release en ${label}.`);
+    const coverRelative = coverUrl.pathname.slice(appUrl.pathname.length).replace(/^\//, "");
+    assert(coverRelative && existsSync(resolve(OUT_DIR, ...coverRelative.split("/"))), `Cover ausente en ${label}.`);
+    assert(typeof entry.coverAlt === "string" && entry.coverAlt.trim(), `${label}.coverAlt es obligatorio.`);
+    const content = expectedKind === "page" ? entry.content : entry.body;
+    assert(typeof content === "string" && content.trim(), `${label}.${expectedKind === "page" ? "content" : "body"} es obligatorio.`);
+    assert(content.length <= 50_000, `${label} excede 50.000 caracteres.`);
+    assert(!/<(?:p|h[1-6]|figure|img|audio|table)\b/i.test(content), `${label} conserva HTML sin convertir a Markdown editable.`);
+    assert(!/^#{4,}\s+/m.test(content), `${label} usa encabezados Markdown H4+ que Nuklo Core no soporta.`);
+    if (expectedKind === "page" && EDITABLE_PAGE_TRANSLATION_KEYS.has(entry.translationKey)) {
+      assert(content.trim() !== entry.seoDescription.trim(), `${label} repite solo la descripción SEO en vez del contenido visible.`);
+      assert(content.length >= 240, `${label} no conserva suficiente contenido visible (${content.length} caracteres).`);
+      assert(/^##\s+\S/m.test(content), `${label} no conserva la introducción estructurada de la página.`);
+      assert((content.match(/^###\s+\S/gm) || []).length >= 3, `${label} no conserva sus bloques visibles principales.`);
+    }
+    for (const mediaUrl of extractMarkdownMediaUrls(content)) {
+      const parsed = new URL(mediaUrl);
+      assert(parsed.protocol === "https:", `Media embebida sin HTTPS en ${label}: ${mediaUrl}`);
+      assert(parsed.origin === appUrl.origin && parsed.pathname.startsWith(appUrl.pathname), `Media embebida fuera del release en ${label}: ${mediaUrl}`);
+      assert(mediaByUrl.has(parsed.toString()), `Media embebida sin mediaAsset en ${label}: ${mediaUrl}`);
+      const relativeAsset = parsed.pathname.slice(appUrl.pathname.length).replace(/^\//, "");
+      assert(relativeAsset && existsSync(resolve(OUT_DIR, ...relativeAsset.split("/"))), `Media embebida ausente en ${label}: ${relativeAsset}`);
+    }
+    if (expectedKind === "blogPost") {
+      assert(entry.publishedAt && !Number.isNaN(new Date(entry.publishedAt).getTime()), `${label}.publishedAt invalido.`);
+      assert(typeof entry.author === "string" && entry.author.trim(), `${label}.author es obligatorio.`);
+      assert(typeof entry.publisher === "string" && entry.publisher.trim(), `${label}.publisher es obligatorio.`);
+    }
+    const groupKey = `${expectedKind}:${entry.translationKey}`;
+    const locales = translationGroups.get(groupKey) || [];
+    locales.push(entry.locale);
+    translationGroups.set(groupKey, locales);
+  }
+
+  for (const [index, page] of sidecar.pages.entries()) await validateEntry(page, "page", index);
+  for (const [index, post] of sidecar.blogPosts.entries()) await validateEntry(post, "blogPost", index);
+  const structuredPages = sidecar.pages.filter((page) => EDITABLE_PAGE_TRANSLATION_KEYS.has(page.translationKey));
+  assert(structuredPages.length === EDITABLE_PAGE_TRANSLATION_KEYS.size * LOCALES.length, `Se esperaban 16 Page seeds estructuradas; hay ${structuredPages.length}.`);
+  for (const [translationKey, locales] of translationGroups) {
+    assert(JSON.stringify([...locales].sort()) === JSON.stringify([...LOCALES].sort()), `Grupo editorial incompleto ${translationKey}: ${locales.join(",")}`);
+  }
+  assert(translationGroups.size === 15, `Se esperaban 15 grupos editoriales; hay ${translationGroups.size}.`);
+  const source = await loadReleaseSource();
+  const postsByIdentity = new Map(sidecar.blogPosts.map((post) => [`${post.translationKey}:${post.locale}`, post]));
+  for (const article of source.articles) {
+    const post = postsByIdentity.get(`${article.translationKey}:${article.locale}`);
+    assert(post, `Falta articulo editorial ${article.translationKey}:${article.locale}.`);
+    assert(post.author === article.author, `Autor editorial alterado en ${post.key}: ${post.author}/${article.author}.`);
+    assert(post.publisher === article.publisher, `Publisher editorial alterado en ${post.key}: ${post.publisher}/${article.publisher}.`);
+    for (const rawSource of extractHtmlMediaSources(article.bodyHtml)) {
+      const parsedSource = new URL(rawSource, "https://release.local");
+      assert(parsedSource.origin === "https://release.local" && parsedSource.pathname.startsWith("/assets/"), `Media fuente externa en ${post.key}: ${rawSource}`);
+      const expectedAssetUrl = new URL(parsedSource.pathname.replace(/^\//, ""), manifest.appUrl).toString();
+      assert(mediaByUrl.has(expectedAssetUrl), `Media fuente sin mediaAsset en ${post.key}: ${rawSource}`);
+    }
+    const expectedImages = (String(article.bodyHtml || "").match(/<img\b/gi) || []).length;
+    const expectedAudio = (String(article.bodyHtml || "").match(/<audio\b/gi) || []).length;
+    const expectedTables = (String(article.bodyHtml || "").match(/<table\b/gi) || []).length;
+    const actualImages = (post.body.match(/^!\[/gm) || []).length;
+    const actualAudio = (post.body.match(/^::audio\[/gm) || []).length;
+    const actualTables = (post.body.match(/^\|(?: --- \|)+$/gm) || []).length;
+    assert(actualImages === expectedImages, `Imagenes editoriales perdidas en ${post.key}: ${actualImages}/${expectedImages}.`);
+    assert(actualAudio === expectedAudio, `Audios editoriales perdidos en ${post.key}: ${actualAudio}/${expectedAudio}.`);
+    assert(actualTables === expectedTables, `Tablas editoriales perdidas en ${post.key}: ${actualTables}/${expectedTables}.`);
+  }
+  return { pages: sidecar.pages.length, blogPosts: sidecar.blogPosts.length, bytes: raw.byteLength };
 }
 
 async function validateIntegrity(manifestRaw, manifest, integrity) {
@@ -405,6 +574,7 @@ async function main() {
   validateManifestShape(manifest);
   const routeResult = await validateRoutes(manifest);
   const sourceAssets = await validateSourceAssets(manifest);
+  const editorial = await validateEditorialContent(manifest);
   const fileCount = await validateIntegrity(manifestRaw, manifest, integrity);
   const migration = await validateSeoMigration(manifest);
   const exactCore = runExactCoreValidation(manifestPath);
@@ -415,6 +585,7 @@ async function main() {
   console.log(`  ${routeResult.routes} unique routes, ${(routeResult.totalHtmlBytes / 1024 / 1024).toFixed(2)} MiB imported HTML`);
   console.log(`  ${routeResult.prerenderedProperties} property pages and ${routeResult.prerenderedArticles} article pages prerendered with JSON-LD`);
   console.log(`  ${sourceAssets.mediaAssets} original cover/brand assets with ${sourceAssets.sourceHashes} locked source hashes`);
+  console.log(`  ${editorial.pages} editable pages and ${editorial.blogPosts} editable localized posts in ${(editorial.bytes / 1024).toFixed(1)} KiB sidecar`);
   console.log(`  ${fileCount} integrity-tracked files`);
   console.log(`  ${migration.articleRedirects} article redirects, ${migration.propertyRedirects} property redirects, ${migration.gone} gone routes`);
   console.log(`  ${migration.localizedPropertyFacts} localized property fact sets with stable filter keys`);
